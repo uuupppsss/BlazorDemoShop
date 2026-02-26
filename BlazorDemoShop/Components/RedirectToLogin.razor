@@ -1,0 +1,16 @@
+@inject NavigationManager NavigationManager
+
+<p>Требуется авторизация. Выполняется переход на страницу входа...</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Сохраняем исходную целевую страницу и передаем ее в login как returnUrl.
+        var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var returnUrl = string.IsNullOrWhiteSpace(relativePath)
+            ? "/"
+            : $"/{relativePath}";
+
+        NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
+}

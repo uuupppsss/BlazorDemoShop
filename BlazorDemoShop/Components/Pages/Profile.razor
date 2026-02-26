@@ -1,0 +1,73 @@
+@page "/profile"
+@attribute [Authorize]
+@inject ApiAuthClient ApiAuthClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Профиль</PageTitle>
+
+<h1>Профиль пользователя</h1>
+
+@if (_isLoading)
+{
+    <p>Загрузка данных профиля...</p>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @_errorMessage
+    </div>
+}
+else if (_profile is null)
+{
+    <div class="alert alert-warning" role="alert">
+        Не удалось получить данные профиля.
+    </div>
+}
+else
+{
+    <div class="card" style="max-width: 480px;">
+        <div class="card-body">
+            <h5 class="card-title">@_profile.UserName</h5>
+            <p class="card-text mb-1"><strong>ID:</strong> @_profile.Id</p>
+            <p class="card-text mb-0"><strong>Email:</strong> @_profile.Email</p>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private UserInfoDTO? _profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // UserId читаем из claims в auth-cookie, а не из query/form-параметров.
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                _errorMessage = "Не удалось определить пользователя в текущей сессии.";
+                return;
+            }
+
+            // Данные профиля загружаем из ApiDemoShop.
+            _profile = await ApiAuthClient.GetUserByIdAsync(userId);
+
+            if (_profile is null)
+            {
+                _errorMessage = "Пользователь не найден в ApiDemoShop.";
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Ошибка при получении данных из ApiDemoShop.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

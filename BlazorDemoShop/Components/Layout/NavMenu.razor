@@ -1,4 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject ApiAuthClient ApiAuthClient
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">BlazorDemoShop</a>
     </div>
@@ -14,17 +18,70 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized Context="auth">
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @auth.User.Identity?.Name
+                    </NavLink>
+                </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+                <div class="nav-item px-3">
+                    <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Выйти
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Войти
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register">
+                        <span class="bi bi-person-plus" aria-hidden="true"></span> Регистрация
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        @if (!string.IsNullOrWhiteSpace(_logoutError))
+        {
+            <div class="px-3 mt-2 text-danger small">@_logoutError</div>
+        }
     </nav>
 </div>
+
+@code {
+    private string? _logoutError;
+
+    private async Task LogoutAsync(ClaimsPrincipal user)
+    {
+        _logoutError = null;
+
+        try
+        {
+            // 1) Уведомляем API
+            var token = user.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+            await ApiAuthClient.LogoutAsync(token);
+        }
+        catch
+        {
+            
+        }
+
+        try
+        {
+            // 2) очищаем локальную auth-cookie
+            await JsRuntime.InvokeVoidAsync("authSession.signOut");
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        catch
+        {
+            _logoutError = "Не удалось завершить локальную сессию. Обновите страницу и попробуйте снова.";
+        }
+    }
+}
 

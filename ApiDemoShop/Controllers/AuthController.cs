@@ -1,6 +1,6 @@
 ﻿using ApiDemoShop.Services;
 using LibDemoShop;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiDemoShop.Controllers
@@ -73,5 +73,14 @@ namespace ApiDemoShop.Controllers
             return Ok(user);
         }
 
+        //!!!
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<ActionResult<AuthResponseDTO>> Logout()
+        {
+            var result = await _authService.LogoutAsync();
+            return Ok(result);
+        }
     }
 }
+
