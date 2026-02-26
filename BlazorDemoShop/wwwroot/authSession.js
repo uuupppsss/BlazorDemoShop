@@ -1,6 +1,5 @@
 window.authSession = {
     signIn: async function (payload) {
-        // Вызывает локальный endpoint Blazor, который записывает auth-cookie текущего хоста.
         const response = await fetch("/auth/session/signin", {
             method: "POST",
             credentials: "include",
@@ -16,7 +15,6 @@ window.authSession = {
         }
     },
     signOut: async function () {
-        // Вызывает локальный endpoint Blazor, который удаляет auth-cookie.
         const response = await fetch("/auth/session/signout", {
             method: "POST",
             credentials: "include"

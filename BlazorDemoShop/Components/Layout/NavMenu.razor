@@ -1,4 +1,4 @@
-﻿@inject ApiAuthClient ApiAuthClient
+﻿@inject ApiAuthClientService ApiAuthClient
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 
@@ -49,7 +49,7 @@
 
         @if (!string.IsNullOrWhiteSpace(_logoutError))
         {
-            <div class="px-3 mt-2 text-danger small">@_logoutError</div>
+            <div class="px-3 mt-2 small logout-error">@_logoutError</div>
         }
     </nav>
 </div>

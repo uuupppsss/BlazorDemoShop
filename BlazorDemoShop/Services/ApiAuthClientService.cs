@@ -5,11 +5,11 @@ using System.Net.Http.Json;
 
 namespace BlazorDemoShop.Services
 {
-    public class ApiAuthClient
+    public class ApiAuthClientService
     {
         private readonly HttpClient _httpClient;
 
-        public ApiAuthClient(HttpClient httpClient)
+        public ApiAuthClientService(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }

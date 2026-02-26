@@ -1,53 +1,55 @@
 @page "/register"
-@inject ApiAuthClient ApiAuthClient
+@inject ApiAuthClientService ApiAuthClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 
 <PageTitle>Регистрация</PageTitle>
 
-<h1>Регистрация</h1>
+<section class="page-shell auth-shell">
+    <h1>Регистрация</h1>
+    <p class="mb-2">Создайте аккаунт для доступа к профилю.</p>
 
-@if (!string.IsNullOrWhiteSpace(_errorMessage))
-{
-    <div class="alert alert-danger" role="alert">
-        @_errorMessage
-    </div>
-}
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger mt-3" role="alert">
+            @_errorMessage
+        </div>
+    }
 
+    <EditForm Model="_model" OnValidSubmit="HandleSignUpAsync" FormName="register-form">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="mb-2" />
 
-<EditForm Model="_model" OnValidSubmit="HandleSignUpAsync" FormName="register-form">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+        <div class="mb-3">
+            <label for="userName" class="form-label">Имя пользователя</label>
+            <InputText id="userName" class="form-control" @bind-Value="_model.UserName" />
+        </div>
 
-    <div class="mb-3">
-        <label for="userName" class="form-label">Имя пользователя</label>
-        <InputText id="userName" class="form-control" @bind-Value="_model.UserName" />
-    </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <InputText id="email" class="form-control" @bind-Value="_model.Email" />
+        </div>
 
-    <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <InputText id="email" class="form-control" @bind-Value="_model.Email" />
-    </div>
+        <div class="mb-3">
+            <label for="phone" class="form-label">Телефон</label>
+            <InputText id="phone" class="form-control" @bind-Value="_model.ContactPhone" />
+        </div>
 
-    <div class="mb-3">
-        <label for="phone" class="form-label">Телефон</label>
-        <InputText id="phone" class="form-control" @bind-Value="_model.ContactPhone" />
-    </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <InputText id="password" class="form-control" type="password" @bind-Value="_model.Password" />
+        </div>
 
-    <div class="mb-3">
-        <label for="password" class="form-label">Пароль</label>
-        <InputText id="password" class="form-control" type="password" @bind-Value="_model.Password" />
-    </div>
+        <button type="submit" class="btn btn-success" disabled="@_isBusy">
+            @(_isBusy ? "Создается аккаунт..." : "Зарегистрироваться")
+        </button>
+    </EditForm>
 
-    <button type="submit" class="btn btn-success" disabled="@_isBusy">
-        @(_isBusy ? "Регистрация..." : "Зарегистрироваться")
-    </button>
-</EditForm>
-
-<p class="mt-3">
-    Уже есть аккаунт? <a href="/login">Войти</a>
-</p>
+    <p class="mt-3 mb-0">
+        Уже есть аккаунт? <a href="/login">Войти</a>
+    </p>
+</section>
 
 @code {
     private readonly RegisterInputModel _model = new();
@@ -86,7 +88,6 @@
                 return;
             }
 
-            //создаем локальную cookie-сессию
             await JsRuntime.InvokeVoidAsync("authSession.signIn", new SessionSignInRequest
             {
                 UserId = response.UserId,
@@ -100,7 +101,7 @@
         }
         catch (Exception)
         {
-            _errorMessage = "Ошибка при подключении к Api";
+            _errorMessage = "Ошибка при подключении к API.";
         }
         finally
         {

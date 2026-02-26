@@ -1,11 +1,10 @@
 @inject NavigationManager NavigationManager
 
-<p>Требуется авторизация. Выполняется переход на страницу входа...</p>
+<p class="loading-pill">Требуется авторизация. Выполняется переход на страницу входа...</p>
 
 @code {
     protected override void OnInitialized()
     {
-        // Сохраняем исходную целевую страницу и передаем ее в login как returnUrl.
         var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         var returnUrl = string.IsNullOrWhiteSpace(relativePath)
             ? "/"

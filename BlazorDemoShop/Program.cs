@@ -28,7 +28,7 @@ namespace BlazorDemoShop
             builder.Services.AddAuthorization();
             builder.Services.AddCascadingAuthenticationState();
 
-            builder.Services.AddHttpClient<ApiAuthClient>((serviceProvider, client) =>
+            builder.Services.AddHttpClient<ApiAuthClientService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
