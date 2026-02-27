@@ -2,7 +2,7 @@
 using ApiDemoShop.Model;
 using LibDemoShop;
 
-namespace ApiDemoShop.Data
+namespace ApiDemoShop.Services
 {
     public class MappingProfile : Profile
     {

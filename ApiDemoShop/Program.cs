@@ -14,6 +14,7 @@ namespace ApiDemoShop
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            //builder.Services.AddSingleton<EmailService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             builder.Services.AddDbContext<DemoShopDbContext>();
             builder.Services.AddScoped<IAuthService, AuthService>();

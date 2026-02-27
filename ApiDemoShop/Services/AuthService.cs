@@ -1,5 +1,6 @@
 ﻿using ApiDemoShop.Data;
 using ApiDemoShop.Model;
+using AutoMapper;
 using LibDemoShop;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,13 +18,13 @@ namespace ApiDemoShop.Services
     {
         private readonly DemoShopDbContext _context;
         private readonly JwtService _jwtService;
-        private readonly ILogger<AuthService> _logger;
+        //private readonly IMapper _mapper;
 
-        public AuthService(DemoShopDbContext context, JwtService jwtService, ILogger<AuthService> logger)
+        public AuthService(DemoShopDbContext context, JwtService jwtService)
         {
             _context = context;
             _jwtService = jwtService;
-            _logger = logger;
+           
         }
 
         public async Task<AuthResponseDTO> SignUpAsync(CreateUserDTO request)
@@ -55,6 +56,10 @@ namespace ApiDemoShop.Services
                     RoleId = 2
                 };
 
+
+
+
+
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
                 // API выдает JWT, затем Blazor хранит его в своем cookie-claim для API-вызовов.
@@ -73,7 +78,6 @@ namespace ApiDemoShop.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при регистрации");
                 return new AuthResponseDTO
                 {
                     Success = false,
@@ -86,7 +90,7 @@ namespace ApiDemoShop.Services
         {
             try
             {
-                // Логин по email; при необходимости можно расширить до username.
+                // Логин по email
                 var user = await _context.Users
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
 
@@ -99,7 +103,7 @@ namespace ApiDemoShop.Services
                     };
                 }
 
-                // Проверяем пароль в виде хэша.
+               
                 bool isPasswordValid = user.Password == HashService.HashMethod(request.Password);
 
                 if (!isPasswordValid)
@@ -111,7 +115,7 @@ namespace ApiDemoShop.Services
                     };
                 }
 
-                // Далее JWT используется Blazor-клиентом для защищенных API-вызовов.
+                
                 var token = _jwtService.GenerateToken(user);
 
                 return new AuthResponseDTO
@@ -127,7 +131,6 @@ namespace ApiDemoShop.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при входе");
                 return new AuthResponseDTO
                 {
                     Success = false,
@@ -138,7 +141,6 @@ namespace ApiDemoShop.Services
 
         public async Task<UserInfoDTO?> GetUserByIdAsync(int id)
         {
-            // Минимальная модель профиля для клиентской страницы профиля.
             var user = await _context.Users.FindAsync(id);
 
             if (user == null)
@@ -152,9 +154,9 @@ namespace ApiDemoShop.Services
             };
         }
 
+        //!!!
         public Task<AuthResponseDTO> LogoutAsync()
         {
-            // JWT токены статичны, поэтому сервер просто подтверждает выход.
             return Task.FromResult(new AuthResponseDTO
             {
                 Success = true,
