@@ -1,47 +1,69 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using System.Net.Mail;
+using System.Security.Cryptography;
 
 namespace ApiDemoShop.Services
 {
     public class EmailService
     {
-        //private SmtpClient smtp;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<EmailService> _logger;
 
-        private static EmailService instance;
-        public static EmailService Instance {  
-            get 
-            {
-                if(instance == null)
-                {
-                    instance = new EmailService();
-                    //instance.smtp=new SmtpClient("smtp.beget.com", 2525);
-                    //instance.smtp.Credentials = new NetworkCredential("1145@suz-ppk.ru","i_love_PPK!1");
-                    //instance.smtp.EnableSsl = true;
-                }
-                return instance;
-            } 
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        {
+            _configuration = configuration;
+            _logger = logger;
         }
 
-        public async Task SendMessageasync(string email)
+        public async Task SendMessageAsync(string email, string code, CancellationToken cancellationToken = default)
         {
-            MailAddress from= new MailAddress("1145@suz-ppk.ru");
-            MailAddress to = new MailAddress(email);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException("Email не может быть пустым.", nameof(email));
+            }
 
-            string code = CreateCode();
-            MailMessage message = new MailMessage(from, to);
-            message.Subject = "Код авторизации";
-            message.Body = $"Для подтверждения входа используйте код {code}";
-            message.IsBodyHtml = true;
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                throw new ArgumentException("Код подтверждения не может быть пустым.", nameof(code));
+            }
 
-            SmtpClient smtp = new SmtpClient("smtp.beget.com", 2525);
-            smtp.Credentials = new NetworkCredential("1145@suz-ppk.ru", "i_love_PPK!1");
-            smtp.EnableSsl = true;
-            await smtp.SendMailAsync(message);
+            var host = _configuration["Smtp:Host"];
+            var senderEmail = _configuration["Smtp:SenderEmail"];
+            var senderPassword = _configuration["Smtp:SenderPassword"];
+            var senderName = _configuration["Smtp:SenderName"] ?? "DemoShop";
+            var port = int.TryParse(_configuration["Smtp:Port"], out var parsedPort) ? parsedPort : 587;
+            var enableSsl = bool.TryParse(_configuration["Smtp:EnableSsl"], out var parsedEnableSsl) ? parsedEnableSsl : true;
+
+            if (string.IsNullOrWhiteSpace(host) ||
+                string.IsNullOrWhiteSpace(senderEmail) ||
+                string.IsNullOrWhiteSpace(senderPassword))
+            {
+                throw new InvalidOperationException("SMTP настройки не заданы. Проверьте секцию Smtp в appsettings.");
+            }
+
+            using var message = new MailMessage(
+                new MailAddress(senderEmail, senderName),
+                new MailAddress(email))
+            {
+                Subject = "Код подтверждения email",
+                Body = $"Для подтверждения регистрации используйте код: {code}",
+                IsBodyHtml = false
+            };
+
+            using var smtp = new SmtpClient(host, port)
+            {
+                Credentials = new NetworkCredential(senderEmail, senderPassword),
+                EnableSsl = enableSsl
+            };
+
+            _logger.LogInformation("Отправка кода подтверждения регистрации на {Email}", email);
+            await smtp.SendMailAsync(message, cancellationToken);
         }
 
         public string CreateCode()
         {
-            return "superswcretcode";
+            return RandomNumberGenerator.GetInt32(100000, 1000000).ToString(CultureInfo.InvariantCulture);
         }
     }
 }

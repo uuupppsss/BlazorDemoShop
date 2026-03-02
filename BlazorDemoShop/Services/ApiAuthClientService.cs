@@ -1,4 +1,4 @@
-using LibDemoShop;
+﻿using LibDemoShop;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -23,6 +23,12 @@ namespace BlazorDemoShop.Services
         public async Task<AuthResponseDTO> SignUpAsync(CreateUserDTO request, CancellationToken cancellationToken = default)
         {
             using var response = await _httpClient.PostAsJsonAsync("api/auth/signup", request, cancellationToken);
+            return await ReadAuthResponseAsync(response, cancellationToken);
+        }
+
+        public async Task<AuthResponseDTO> ConfirmEmailAsync(ConfirmEmailDTO request, CancellationToken cancellationToken = default)
+        {
+            using var response = await _httpClient.PostAsJsonAsync("api/auth/confirm-email", request, cancellationToken);
             return await ReadAuthResponseAsync(response, cancellationToken);
         }
 

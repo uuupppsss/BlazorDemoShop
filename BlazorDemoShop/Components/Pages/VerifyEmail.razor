@@ -1,0 +1,118 @@
+@page "/verify-email"
+@inject ApiAuthClientService ApiAuthClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+
+<PageTitle>Подтверждение email</PageTitle>
+
+<section class="page-shell auth-shell">
+    <h1>Подтверждение email</h1>
+
+    @if (string.IsNullOrWhiteSpace(_email))
+    {
+        <div class="alert alert-danger mt-3" role="alert">
+            Email не указан. Вернитесь на страницу регистрации.
+        </div>
+    }
+    else
+    {
+        <p class="mb-2">Мы отправили код подтверждения на <strong>@_email</strong>.</p>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                @_errorMessage
+            </div>
+        }
+
+        <EditForm Model="_model" OnValidSubmit="HandleConfirmAsync" FormName="verify-email-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="mb-2" />
+
+            <div class="mb-3">
+                <label for="code" class="form-label">Код подтверждения</label>
+                <InputText id="code" class="form-control" @bind-Value="_model.Code" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" disabled="@_isBusy">
+                @(_isBusy ? "Подтверждаем..." : "Подтвердить email")
+            </button>
+        </EditForm>
+    }
+</section>
+
+@code {
+    private readonly VerifyEmailInputModel _model = new();
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _email;
+
+    [SupplyParameterFromQuery(Name = "email")]
+    public string? Email { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _email = Email?.Trim();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/profile", forceLoad: true);
+        }
+    }
+
+    private async Task HandleConfirmAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _errorMessage = "Email не указан.";
+            return;
+        }
+
+        _isBusy = true;
+        _errorMessage = null;
+
+        try
+        {
+            var response = await ApiAuthClient.ConfirmEmailAsync(new ConfirmEmailDTO
+            {
+                Email = _email,
+                Code = _model.Code.Trim()
+            });
+
+            if (!response.Success)
+            {
+                _errorMessage = response.Message ?? "Не удалось подтвердить email.";
+                return;
+            }
+
+            await JsRuntime.InvokeVoidAsync("authSession.signIn", new SessionSignInRequest
+            {
+                UserId = response.UserId,
+                UserName = response.UserName ?? _email,
+                Email = response.Email,
+                Token = response.Token,
+                TokenExpiration = response.TokenExpiration
+            });
+
+            NavigationManager.NavigateTo("/profile", forceLoad: true);
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Ошибка при подключении к API.";
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private class VerifyEmailInputModel
+    {
+        [Required(ErrorMessage = "Введите код подтверждения")]
+
+        [MinLength(6, ErrorMessage = "Код должен содержать 6 символов")]
+        public string Code { get; set; } = string.Empty;
+    }
+}

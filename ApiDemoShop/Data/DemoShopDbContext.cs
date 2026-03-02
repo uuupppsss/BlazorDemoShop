@@ -19,6 +19,8 @@ namespace ApiDemoShop.Data
 
         public virtual DbSet<BasketItem> BasketItems { get; set; }
 
+        public virtual DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
+
         public virtual DbSet<Order> Orders { get; set; }
 
         public virtual DbSet<OrderItem> OrderItems { get; set; }
@@ -46,9 +48,9 @@ namespace ApiDemoShop.Data
             if (!optionsBuilder.IsConfigured)
             {
 
-                optionsBuilder.UseSqlServer("Server=192.168.200.35;Database=user26;user=user26;password=50371;TrustServerCertificate=true;MultipleActiveResultSets=true");
+                //optionsBuilder.UseSqlServer("Server=192.168.200.35;Database=user26;user=user26;password=50371;TrustServerCertificate=true;MultipleActiveResultSets=true");
 
-                //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=DemoShopDb;Trusted_Connection=True;MultipleActiveResultSets=true");
+                optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=DemoShopDb;Trusted_Connection=True;MultipleActiveResultSets=true");
             }
         }
 
@@ -90,6 +92,41 @@ namespace ApiDemoShop.Data
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BasketItem_User");
+            });
+
+            modelBuilder.Entity<EmailVerificationCode>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.ToTable("EmailVerificationCode");
+
+                entity.HasIndex(e => e.UserId)
+                    .IsUnique();
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.UserId)
+                    .HasColumnName("user_id");
+
+                entity.Property(e => e.CodeHash)
+                    .HasColumnName("code_hash")
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.ExpiresAt)
+                    .HasColumnName("expires_at")
+                    .HasColumnType("datetime2");
+
+                entity.Property(e => e.CreatedAt)
+                    .HasColumnName("created_at")
+                    .HasColumnType("datetime2");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.EmailVerificationCodes)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_EmailVerificationCode_User");
             });
 
             modelBuilder.Entity<Order>(entity =>
@@ -345,6 +382,10 @@ namespace ApiDemoShop.Data
                 entity.Property(e => e.Email)
                     .HasMaxLength(50)
                     .HasDefaultValue("");
+
+                entity.Property(e => e.IsEmailConfirmed)
+                    .HasColumnName("is_email_confirmed")
+                    .HasDefaultValue(false);
 
                 entity.Property(e => e.Password)
                     .HasMaxLength(255)

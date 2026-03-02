@@ -41,10 +41,17 @@ namespace LibDemoShop
         public string Password { get; set; } = null!;
     }
 
+    public class ConfirmEmailDTO
+    {
+        public string Email { get; set; } = null!;
+        public string Code { get; set; } = null!;
+    }
+
     public class AuthResponseDTO
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
+        public bool RequiresEmailConfirmation { get; set; }
         public string? Token { get; set; }
         public string? UserName { get; set; }
         public string? Email { get; set; }

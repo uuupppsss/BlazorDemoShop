@@ -53,6 +53,41 @@ namespace ApiDemoShop.Migrations
                     b.ToTable("BasketItem", (string)null);
                 });
 
+            modelBuilder.Entity("ApiDemoShop.Model.EmailVerificationCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "UserId" }, "IX_EmailVerificationCode_user_id")
+                        .IsUnique();
+
+                    b.ToTable("EmailVerificationCode", (string)null);
+                });
+
             modelBuilder.Entity("ApiDemoShop.Model.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -309,6 +344,12 @@ namespace ApiDemoShop.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasDefaultValue("");
 
+                    b.Property<bool>("IsEmailConfirmed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasColumnName("is_email_confirmed")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -370,6 +411,18 @@ namespace ApiDemoShop.Migrations
                         .HasConstraintName("FK_BasketItem_User");
 
                     b.Navigation("Product");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ApiDemoShop.Model.EmailVerificationCode", b =>
+                {
+                    b.HasOne("ApiDemoShop.Model.User", "User")
+                        .WithMany("EmailVerificationCodes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_EmailVerificationCode_User");
 
                     b.Navigation("User");
                 });
@@ -521,6 +574,8 @@ namespace ApiDemoShop.Migrations
             modelBuilder.Entity("ApiDemoShop.Model.User", b =>
                 {
                     b.Navigation("BasketItems");
+
+                    b.Navigation("EmailVerificationCodes");
 
                     b.Navigation("Orders");
 

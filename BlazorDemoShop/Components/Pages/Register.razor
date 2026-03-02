@@ -1,7 +1,6 @@
-@page "/register"
+﻿@page "/register"
 @inject ApiAuthClientService ApiAuthClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 
 <PageTitle>Регистрация</PageTitle>
@@ -88,16 +87,8 @@
                 return;
             }
 
-            await JsRuntime.InvokeVoidAsync("authSession.signIn", new SessionSignInRequest
-            {
-                UserId = response.UserId,
-                UserName = response.UserName ?? _model.UserName,
-                Email = response.Email,
-                Token = response.Token,
-                TokenExpiration = response.TokenExpiration
-            });
-
-            NavigationManager.NavigateTo("/profile", forceLoad: true);
+            var email = response.Email ?? _model.Email.Trim();
+            NavigationManager.NavigateTo($"/verify-email?email={Uri.EscapeDataString(email)}");
         }
         catch (Exception)
         {

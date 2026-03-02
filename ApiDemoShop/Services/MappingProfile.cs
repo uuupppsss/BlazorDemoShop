@@ -15,7 +15,7 @@ namespace ApiDemoShop.Services
                 .ForMember(dest => dest.ProductPrice,
                     opt => opt.MapFrom(src => src.Product.Price))
                 .ForMember(dest => dest.ProductImage,
-                    opt => opt.MapFrom(src => src.Product.ProductImages.FirstOrDefault().Image));
+                    opt => opt.MapFrom(src => src.Product.ProductImages.Select(i => i.Image).FirstOrDefault() ?? string.Empty));
             CreateMap<CreateBasketItemDTO, BasketItem>();
             CreateMap<UpdateBasketItemDTO, BasketItem>();
 
@@ -52,7 +52,7 @@ namespace ApiDemoShop.Services
                 .ForMember(dest => dest.Tags,
                     opt => opt.MapFrom(src => src.ProductTags.Select(pt => pt.Tag).ToList()))
                 .ForMember(dest => dest.MainImage,
-                    opt => opt.MapFrom(src => src.ProductImages.FirstOrDefault().Image));
+                    opt => opt.MapFrom(src => src.ProductImages.Select(i => i.Image).FirstOrDefault() ?? string.Empty));
             CreateMap<CreateProductDTO, Product>();
             CreateMap<UpdateProductDTO, Product>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
@@ -78,7 +78,7 @@ namespace ApiDemoShop.Services
                 .ForMember(dest => dest.ProductPrice,
                     opt => opt.MapFrom(src => src.Product.Price))
                 .ForMember(dest => dest.ProductImage,
-                    opt => opt.MapFrom(src => src.Product.ProductImages.FirstOrDefault().Image));
+                    opt => opt.MapFrom(src => src.Product.ProductImages.Select(i => i.Image).FirstOrDefault() ?? string.Empty));
             CreateMap<CreateSavedProductDTO, SavedProduct>();
 
             // Tag mappings

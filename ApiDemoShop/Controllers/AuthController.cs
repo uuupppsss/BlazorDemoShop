@@ -60,6 +60,28 @@ namespace ApiDemoShop.Controllers
             return Unauthorized(result);
         }
 
+        [HttpPost("confirm-email")]
+        public async Task<ActionResult<AuthResponseDTO>> ConfirmEmail([FromBody] ConfirmEmailDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponseDTO
+                {
+                    Success = false,
+                    Message = "Некорректные данные"
+                });
+            }
+
+            var result = await _authService.ConfirmEmailAsync(request);
+
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+
+            return Unauthorized(result);
+        }
+
         [HttpGet("user/{id}")]
         public async Task<ActionResult<UserInfoDTO>> GetUser(int id)
         {
