@@ -1,0 +1,88 @@
+@page "/products"
+@inject ApiProductsClientService ApiProductsClient
+@using System.Globalization
+
+<PageTitle>Каталог товаров</PageTitle>
+
+<section class="page-shell products-shell">
+    <h1>Каталог товаров</h1>
+    <p class="mb-3">Прокручивайте страницу вниз: карточки подгружаются автоматически.</p>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger mb-3" role="alert">
+            @_errorMessage
+        </div>
+    }
+
+    <div class="products-list">
+        <Virtualize @ref="_virtualize"
+                    Context="product"
+                    ItemSize="184"
+                    OverscanCount="3"
+                    ItemsProvider="LoadProductsAsync">
+            <ItemContent>
+                <div class="card product-card">
+                    <div class="product-card-image-wrap">
+                        <img class="product-card-image"
+                             src="@GetImageUrl(product.MainImage)"
+                             alt="@product.Name"
+                             loading="lazy" />
+                    </div>
+
+                    <div class="card-body product-card-body">
+                        <h5 class="card-title">@product.Name</h5>
+                        <p class="product-card-price">@FormatPrice(product.Price)</p>
+                        <NavLink class="btn btn-primary btn-sm" href="@($"/products/{product.Id}")">Перейти к товару</NavLink>
+                    </div>
+                </div>
+            </ItemContent>
+
+            <Placeholder>
+                <div class="card product-card product-card-placeholder">
+                    <div class="product-card-image-wrap"></div>
+                    <div class="card-body product-card-body">
+                        <div class="placeholder-line w-75"></div>
+                        <div class="placeholder-line w-50"></div>
+                        <div class="placeholder-line w-25"></div>
+                    </div>
+                </div>
+            </Placeholder>
+        </Virtualize>
+    </div>
+</section>
+
+@code {
+    private const string PlaceholderImage = "https://placehold.co/640x420/efe4d4/5f4638?text=No+Image";
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private Virtualize<ProductCardDTO>? _virtualize;
+    private string? _errorMessage;
+
+    private async ValueTask<ItemsProviderResult<ProductCardDTO>> LoadProductsAsync(ItemsProviderRequest request)
+    {
+        try
+        {
+            var take = request.Count <= 0 ? 12 : request.Count;
+            var page = await ApiProductsClient.GetProductsAsync(request.StartIndex, take);
+            _errorMessage = null;
+
+            return new ItemsProviderResult<ProductCardDTO>(page.Items, page.TotalCount);
+        }
+        catch
+        {
+            _errorMessage = "Не удалось загрузить товары. Проверьте подключение к API.";
+            return new ItemsProviderResult<ProductCardDTO>(Array.Empty<ProductCardDTO>(), 0);
+        }
+    }
+
+    private static string GetImageUrl(string? imageUrl)
+    {
+        return string.IsNullOrWhiteSpace(imageUrl) ? PlaceholderImage : imageUrl;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+}

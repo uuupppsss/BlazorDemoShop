@@ -1,0 +1,93 @@
+@page "/products/{Id:int}"
+@inject ApiProductsClientService ApiProductsClient
+@using System.Globalization
+
+<PageTitle>Товар</PageTitle>
+
+<section class="page-shell product-details-shell">
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем карточку товара...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_product is null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Товар не найден.
+        </div>
+    }
+    else
+    {
+        <h1>@_product.Name</h1>
+
+        <div class="card product-details-card">
+            <div class="product-details-image-wrap">
+                <img class="product-details-image"
+                     src="@GetImageUrl(_product.MainImage)"
+                     alt="@_product.Name"
+                     loading="lazy" />
+            </div>
+
+            <div class="card-body">
+                <p class="product-card-price mb-2">@FormatPrice(_product.Price)</p>
+                <p class="mb-2">@GetDescription(_product.Description)</p>
+                <p class="text-muted mb-4">Купили: @_product.TimeBought раз</p>
+                <NavLink class="btn btn-primary" href="/products">Назад к каталогу</NavLink>
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    private const string PlaceholderImage = "https://placehold.co/960x640/efe4d4/5f4638?text=No+Image";
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private ProductDTO? _product;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _product = null;
+
+        try
+        {
+            _product = await ApiProductsClient.GetProductByIdAsync(Id);
+        }
+        catch
+        {
+            _errorMessage = "Не удалось загрузить товар. Проверьте подключение к API.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GetImageUrl(string? imageUrl)
+    {
+        return string.IsNullOrWhiteSpace(imageUrl) ? PlaceholderImage : imageUrl;
+    }
+
+    private static string GetDescription(string? description)
+    {
+        return string.IsNullOrWhiteSpace(description)
+            ? "Описание товара пока не добавлено."
+            : description;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+}
