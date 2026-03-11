@@ -56,7 +56,7 @@ p {
 a,
 .btn-link {
     color: var(--terracotta);
-    text-decoration-color: color-mix(in srgb, var(--terracotta) 45%, transparent);
+    /*text-decoration-color: color-mix(in srgb, var(--terracotta) 45%, transparent);*/
     text-underline-offset: 0.15em;
     transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
@@ -64,7 +64,7 @@ a,
 a:hover,
 .btn-link:hover {
     color: var(--terracotta-deep);
-    text-decoration-color: color-mix(in srgb, var(--terracotta-deep) 60%, transparent);
+   /* text-decoration-color: color-mix(in srgb, var(--terracotta-deep) 60%, transparent);*/
 }
 
 .content {
@@ -154,14 +154,14 @@ a:hover,
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-.form-control::placeholder {
+/*.form-control::placeholder {
     color: color-mix(in srgb, var(--brown-muted) 62%, #fff);
-}
+}*/
 
 .form-control:hover,
-.form-select:hover {
+/*.form-select:hover {
     border-color: color-mix(in srgb, var(--terracotta) 35%, var(--border));
-}
+}*/
 
 .alert {
     border: 1px solid;
@@ -508,7 +508,7 @@ a:hover,
     border-radius: 12px;
     object-fit: cover;
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(239, 228, 212, 0.45));
-    border: 1px solid color-mix(in srgb, var(--border) 80%, #fff);
+    /*border: 1px solid color-mix(in srgb, var(--border) 80%, #fff);*/
 }
 
 .image-remove-button {
@@ -534,7 +534,7 @@ a:hover,
     margin-top: 0.9rem;
     border-radius: 999px;
     border: 1px solid var(--sage);
-    background: color-mix(in srgb, var(--sage) 12%, #fff);
+    /*background: color-mix(in srgb, var(--sage) 12%, #fff);*/
     color: var(--sage-deep);
     padding: 0.52rem 1rem;
     font-weight: 600;
@@ -581,13 +581,13 @@ a:hover,
 
 code {
     color: var(--terracotta-deep);
-    background-color: color-mix(in srgb, var(--beige) 58%, #fff);
+    /*background-color: color-mix(in srgb, var(--beige) 58%, #fff);*/
     border-radius: 8px;
     padding: 0.1rem 0.35rem;
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid color-mix(in srgb, var(--success) 74%, #fff);
+    /*outline: 1px solid color-mix(in srgb, var(--success) 74%, #fff);*/
 }
 
 .invalid {

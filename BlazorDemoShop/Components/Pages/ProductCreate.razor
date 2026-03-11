@@ -1,4 +1,6 @@
 @page "/products/create"
+
+@rendermode InteractiveServer
 @attribute [Authorize]
 @inject ApiProductsClientService ApiProductsClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -38,10 +40,10 @@
             </div>
         }
 
-        <EditForm EditContext="_editContext" OnValidSubmit="HandleCreateProductAsync" class="product-create-form">
+        <EditForm Model="@_model" OnValidSubmit="@HandleCreateProductAsync" FormName="create-form">
             <DataAnnotationsValidator />
             <ValidationSummary class="mb-2" />
-
+            
             <div class="mb-3">
                 <label for="product-name" class="form-label">Название</label>
                 <InputText id="product-name" class="form-control" @bind-Value="_model.Name" />
@@ -55,8 +57,9 @@
             <div class="mb-3">
                 <label for="product-price" class="form-label">Цена</label>
                 <InputNumber id="product-price" class="form-control" @bind-Value="_model.Price" />
+                
             </div>
-
+            
             <div class="card tag-picker-card mb-3">
                 <div class="card-body">
                     <h5 class="mb-2">Теги товара</h5>
@@ -100,9 +103,9 @@
                         </div>
                     }
                 </div>
-            </div>
+            </div> 
 
-            <div class="card tag-picker-card mb-3">
+             <div class="card tag-picker-card mb-3">
                 <div class="card-body">
                     <div class="image-editor-header">
                         <h5 class="mb-0">Картинки товара</h5>
@@ -138,7 +141,7 @@
                             @for (var i = 0; i < _imageUrls.Count; i++)
                             {
                                 var imageIndex = i;
-                                <div class="image-editor-item">
+                                <div class="image-editor-item"> 
                                     <button type="button"
                                             class="image-remove-button"
                                             title="Удалить картинку"
@@ -147,19 +150,19 @@
                                     </button>
                                     <img class="image-editor-preview"
                                          src="@GetImageUrl(_imageUrls[imageIndex])"
-                                         alt="Картинка товара"
-                                         loading="lazy" />
+                                         alt="Картинка товара"/>
                                 </div>
                             }
                         </div>
                     }
                 </div>
-            </div>
+            </div> 
 
             <button type="submit" class="btn btn-success" disabled="@(_isBusy || _isUploadingImages)">
                 @(_isBusy ? "Добавляем..." : "Добавить товар")
             </button>
         </EditForm>
+        
     }
 </section>
 
@@ -168,7 +171,7 @@
     private const string PlaceholderImage = "https://placehold.co/640x420/efe4d4/5f4638?text=No+Image";
 
     private ProductCreateInputModel _model = new();
-    private EditContext _editContext = default!;
+   // private EditContext _editContext = default!;
     private readonly HashSet<int> _selectedTagIds = new();
     private readonly List<string> _imageUrls = new();
     private List<ProductTypeDTO> _tagFilters = new();
@@ -186,7 +189,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _editContext = new EditContext(_model);
+        //_editContext = new EditContext(_model);
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         _isAdmin = authState.User.IsInRole("admin");
@@ -293,7 +296,9 @@
         }
     }
 
-    private async Task HandleCreateProductAsync()
+
+
+    public async Task HandleCreateProductAsync()
     {
         _isBusy = true;
         _errorMessage = null;
@@ -320,7 +325,7 @@
             _successMessage = $"Товар \"{createdProduct.Name}\" успешно добавлен.";
 
             _model = new ProductCreateInputModel();
-            _editContext = new EditContext(_model);
+            //_editContext = new EditContext(_model);
             _selectedTagIds.Clear();
             _imageUrls.Clear();
         }
@@ -353,7 +358,7 @@
         [StringLength(255, ErrorMessage = "Описание не должно превышать 255 символов")]
         public string? Description { get; set; }
 
-        [Range(typeof(decimal), "0.01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
+        [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
         public decimal Price { get; set; }
     }
 }
