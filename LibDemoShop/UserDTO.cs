@@ -52,6 +52,7 @@ namespace LibDemoShop
         public bool Success { get; set; }
         public string? Message { get; set; }
         public bool RequiresEmailConfirmation { get; set; }
+        public string? Role { get; set; }
         public string? Token { get; set; }
         public string? UserName { get; set; }
         public string? Email { get; set; }

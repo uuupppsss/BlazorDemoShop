@@ -1,0 +1,400 @@
+@page "/products/{Id:int}/edit"
+@attribute [Authorize]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Редактирование товара</PageTitle>
+
+<section class="page-shell product-create-shell">
+    <h1>Редактирование товара</h1>
+
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем данные товара...</p>
+    }
+    else if (!_isAdmin)
+    {
+        <div class="alert alert-warning" role="alert">
+            Редактирование товаров доступно только администратору.
+        </div>
+    }
+    else if (_isNotFound)
+    {
+        <div class="alert alert-warning" role="alert">Товар не найден.</div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger mb-3" role="alert">@_errorMessage</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <div class="alert alert-success mb-3" role="alert">@_successMessage</div>
+        }
+
+        <EditForm EditContext="_editContext" OnValidSubmit="HandleUpdateProductAsync" class="product-create-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="mb-2" />
+
+            <div class="mb-3">
+                <label for="product-name" class="form-label">Название</label>
+                <InputText id="product-name" class="form-control" @bind-Value="_model.Name" />
+            </div>
+
+            <div class="mb-3">
+                <label for="product-description" class="form-label">Описание</label>
+                <InputTextArea id="product-description" class="form-control" rows="4" @bind-Value="_model.Description" />
+            </div>
+
+            <div class="mb-3">
+                <label for="product-price" class="form-label">Цена</label>
+                <InputNumber id="product-price" class="form-control" @bind-Value="_model.Price" />
+            </div>
+
+            <div class="card tag-picker-card mb-3">
+                <div class="card-body">
+                    <h5 class="mb-2">Теги товара</h5>
+
+                    @if (_isTagsLoading)
+                    {
+                        <p class="loading-pill mb-0">Загружаем теги...</p>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_tagsErrorMessage))
+                    {
+                        <div class="alert alert-danger mb-0" role="alert">@_tagsErrorMessage</div>
+                    }
+                    else if (_tagFilters.Count == 0)
+                    {
+                        <p class="mb-0">Теги пока не настроены.</p>
+                    }
+                    else
+                    {
+                        <div class="filter-groups mt-2">
+                            @foreach (var type in _tagFilters)
+                            {
+                                if (type.Tags is null || type.Tags.Count == 0)
+                                {
+                                    continue;
+                                }
+
+                                <fieldset class="filter-group">
+                                    <legend>@type.Title</legend>
+                                    <div class="filter-tags">
+                                        @foreach (var tag in type.Tags)
+                                        {
+                                            <button type="button"
+                                                    class="tag-toggle-button @GetTagSelectedClass(tag.Id)"
+                                                    @onclick="() => ToggleTag(tag.Id)">
+                                                @tag.Title
+                                            </button>
+                                        }
+                                    </div>
+                                </fieldset>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card tag-picker-card mb-3">
+                <div class="card-body">
+                    <div class="image-editor-header">
+                        <h5 class="mb-0">Картинки товара</h5>
+                        @if (_imageUrls.Count < MaxImages)
+                        {
+                            <label class="btn btn-outline-secondary btn-sm image-add-button image-upload-button">
+                                +
+                                <InputFile class="image-upload-input"
+                                           accept="image/*"
+                                           multiple
+                                           OnChange="HandleImageFilesSelectedAsync" />
+                            </label>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-secondary btn-sm image-add-button disabled" disabled>+</button>
+                        }
+                    </div>
+                    <p class="text-muted small mb-3">Можно добавить до @MaxImages изображений.</p>
+
+                    @if (_isUploadingImages)
+                    {
+                        <p class="loading-pill mb-3">Загружаем картинки...</p>
+                    }
+
+                    @if (_imageUrls.Count == 0)
+                    {
+                        <p class="mb-0">Картинки не добавлены.</p>
+                    }
+                    else
+                    {
+                        <div class="image-editor-grid">
+                            @for (var i = 0; i < _imageUrls.Count; i++)
+                            {
+                                var imageIndex = i;
+                                <div class="image-editor-item">
+                                    <button type="button"
+                                            class="image-remove-button"
+                                            title="Удалить картинку"
+                                            @onclick="() => RemoveImage(imageIndex)">
+                                        x
+                                    </button>
+                                    <img class="image-editor-preview"
+                                         src="@GetImageUrl(_imageUrls[imageIndex])"
+                                         alt="Картинка товара"
+                                         loading="lazy" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-success" disabled="@(_isBusy || _isUploadingImages)">
+                    @(_isBusy ? "Сохраняем..." : "Сохранить изменения")
+                </button>
+                <NavLink class="btn btn-outline-secondary" href="@($"/products/{Id}")">Назад к товару</NavLink>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code {
+    private const int MaxImages = 5;
+    private const string PlaceholderImage = "https://placehold.co/640x420/efe4d4/5f4638?text=No+Image";
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductEditInputModel _model = new();
+    private EditContext _editContext = default!;
+    private readonly HashSet<int> _selectedTagIds = new();
+    private readonly List<string> _imageUrls = new();
+    private List<ProductTypeDTO> _tagFilters = new();
+
+    private bool _isLoading = true;
+    private bool _isAdmin;
+    private bool _isNotFound;
+    private bool _isTagsLoading;
+    private bool _isUploadingImages;
+    private bool _isBusy;
+
+    private string? _errorMessage;
+    private string? _successMessage;
+    private string? _tagsErrorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _isNotFound = false;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            _isAdmin = authState.User.IsInRole("admin");
+
+            if (!_isAdmin)
+            {
+                return;
+            }
+
+            await LoadTagsAsync();
+            await LoadProductAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadTagsAsync()
+    {
+        _isTagsLoading = true;
+        _tagsErrorMessage = null;
+
+        try
+        {
+            _tagFilters = await ApiProductsClient.GetTagFiltersAsync();
+        }
+        catch
+        {
+            _tagFilters = new List<ProductTypeDTO>();
+            _tagsErrorMessage = "Не удалось загрузить теги.";
+        }
+        finally
+        {
+            _isTagsLoading = false;
+        }
+    }
+
+    private async Task LoadProductAsync()
+    {
+        var product = await ApiProductsClient.GetProductByIdAsync(Id);
+
+        if (product is null)
+        {
+            _isNotFound = true;
+            return;
+        }
+
+        _model = new ProductEditInputModel
+        {
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price
+        };
+        _editContext = new EditContext(_model);
+
+        _selectedTagIds.Clear();
+        foreach (var tag in product.Tags ?? new List<TagDTO>())
+        {
+            _selectedTagIds.Add(tag.Id);
+        }
+
+        _imageUrls.Clear();
+        foreach (var url in (product.Images ?? new List<string>()).Take(MaxImages))
+        {
+            _imageUrls.Add(url);
+        }
+    }
+
+    private void ToggleTag(int tagId)
+    {
+        if (_selectedTagIds.Contains(tagId))
+        {
+            _selectedTagIds.Remove(tagId);
+        }
+        else
+        {
+            _selectedTagIds.Add(tagId);
+        }
+    }
+
+    private async Task HandleImageFilesSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            if (_imageUrls.Count >= MaxImages)
+            {
+                _errorMessage = $"Можно добавить не более {MaxImages} картинок.";
+                return;
+            }
+
+            var files = args.GetMultipleFiles(20);
+            if (files.Count == 0)
+            {
+                return;
+            }
+
+            var slots = MaxImages - _imageUrls.Count;
+            var filesToUpload = files.Take(slots).ToList();
+
+            if (files.Count > slots)
+            {
+                _errorMessage = $"Загружены будут только первые {slots} файла(ов), лимит {MaxImages}.";
+            }
+
+            _isUploadingImages = true;
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+            var urls = await ApiProductsClient.UploadProductImagesAsync(filesToUpload, accessToken);
+
+            foreach (var url in urls)
+            {
+                if (_imageUrls.Count >= MaxImages)
+                {
+                    break;
+                }
+
+                if (!_imageUrls.Contains(url))
+                {
+                    _imageUrls.Add(url);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isUploadingImages = false;
+        }
+    }
+
+    private void RemoveImage(int index)
+    {
+        if (index >= 0 && index < _imageUrls.Count)
+        {
+            _imageUrls.RemoveAt(index);
+        }
+    }
+
+    private async Task HandleUpdateProductAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            var updated = await ApiProductsClient.UpdateProductAsync(Id, new UpdateProductDTO
+            {
+                Id = Id,
+                Name = _model.Name.Trim(),
+                Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                Price = _model.Price,
+                TagIds = _selectedTagIds.ToList(),
+                ImageUrls = _imageUrls.ToList()
+            }, accessToken);
+
+            _successMessage = $"Товар \"{updated.Name}\" успешно обновлен.";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private static string GetImageUrl(string? imageUrl)
+    {
+        return string.IsNullOrWhiteSpace(imageUrl) ? PlaceholderImage : imageUrl;
+    }
+
+    private string GetTagSelectedClass(int tagId)
+    {
+        return _selectedTagIds.Contains(tagId) ? "selected" : string.Empty;
+    }
+
+    private class ProductEditInputModel
+    {
+        [Required(ErrorMessage = "Введите название товара")]
+        [StringLength(50, MinimumLength = 2, ErrorMessage = "Название должно быть от 2 до 50 символов")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(255, ErrorMessage = "Описание не должно превышать 255 символов")]
+        public string? Description { get; set; }
+
+        [Range(typeof(decimal), "0.01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
+        public decimal Price { get; set; }
+    }
+}

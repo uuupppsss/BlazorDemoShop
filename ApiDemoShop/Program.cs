@@ -78,6 +78,7 @@ namespace ApiDemoShop
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             // Нужно, чтобы [Authorize] на /api/auth/logout мог валидировать JWT.
             app.UseAuthentication();

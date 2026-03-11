@@ -28,6 +28,7 @@ namespace LibDemoShop
         public decimal Price { get; set; }
         public int TimeBought { get; set; }
         public List<int>? TagIds { get; set; }
+        public List<string>? ImageUrls { get; set; }
     }
 
     public class UpdateProductDTO
@@ -39,5 +40,6 @@ namespace LibDemoShop
         public decimal? Price { get; set; }
         public int? TimeBought { get; set; }
         public List<int>? TagIds { get; set; }
+        public List<string>? ImageUrls { get; set; }
     }
 }

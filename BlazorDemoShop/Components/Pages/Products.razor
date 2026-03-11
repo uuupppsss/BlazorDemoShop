@@ -7,6 +7,66 @@
 <section class="page-shell products-shell">
     <h1>Каталог товаров</h1>
 
+    <div class="card products-filters mb-3">
+        <div class="card-body">
+            <div class="products-filters-head">
+                <h5 class="mb-0">Фильтр по тегам</h5>
+                <button type="button"
+                        class="btn btn-link btn-sm"
+                        disabled="@(!HasSelectedTags)"
+                        @onclick="ClearFiltersAsync">
+                    Сбросить фильтры
+                </button>
+            </div>
+
+            @if (_isFiltersLoading)
+            {
+                <p class="loading-pill mt-3 mb-0">Загружаем теги...</p>
+            }
+            else if (!string.IsNullOrWhiteSpace(_filtersErrorMessage))
+            {
+                <div class="alert alert-danger mt-3 mb-0" role="alert">
+                    @_filtersErrorMessage
+                </div>
+            }
+            else if (_tagFilters.Count == 0)
+            {
+                <p class="mb-0 mt-3">Теги пока не настроены.</p>
+            }
+            else
+            {
+                <div class="filter-groups mt-3">
+                    @foreach (var type in _tagFilters)
+                    {
+                        if (type.Tags is null || type.Tags.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        <fieldset class="filter-group">
+                            <legend>@type.Title</legend>
+                            <div class="filter-tags">
+                                @foreach (var tag in type.Tags)
+                                {
+                                    var checkboxId = $"tag-{tag.Id}";
+
+                                    <div class="form-check form-check-inline filter-tag-item">
+                                        <input id="@checkboxId"
+                                               type="checkbox"
+                                               class="form-check-input"
+                                               checked="@_selectedTagIds.Contains(tag.Id)"
+                                               @onchange="args => OnTagChangedAsync(tag.Id, args)" />
+                                        <label class="form-check-label" for="@checkboxId">@tag.Title</label>
+                                    </div>
+                                }
+                            </div>
+                        </fieldset>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <div class="alert alert-danger mb-3" role="alert">
@@ -56,14 +116,84 @@
     private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private Virtualize<ProductCardDTO>? _virtualize;
+    private readonly HashSet<int> _selectedTagIds = new();
+    private List<ProductTypeDTO> _tagFilters = new();
+    private bool _isFiltersLoading = true;
+    private string? _filtersErrorMessage;
     private string? _errorMessage;
+
+    private bool HasSelectedTags => _selectedTagIds.Count > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTagFiltersAsync();
+    }
+
+    private async Task LoadTagFiltersAsync()
+    {
+        _isFiltersLoading = true;
+        _filtersErrorMessage = null;
+
+        try
+        {
+            _tagFilters = await ApiProductsClient.GetTagFiltersAsync();
+        }
+        catch
+        {
+            _tagFilters = new List<ProductTypeDTO>();
+            _filtersErrorMessage = "Не удалось загрузить список тегов.";
+        }
+        finally
+        {
+            _isFiltersLoading = false;
+        }
+    }
+
+    private async Task OnTagChangedAsync(int tagId, ChangeEventArgs args)
+    {
+        var isChecked = args.Value is bool b && b;
+
+        if (isChecked)
+        {
+            _selectedTagIds.Add(tagId);
+        }
+        else
+        {
+            _selectedTagIds.Remove(tagId);
+        }
+
+        await RefreshProductsAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        if (_selectedTagIds.Count == 0)
+        {
+            return;
+        }
+
+        _selectedTagIds.Clear();
+        await RefreshProductsAsync();
+    }
+
+    private async Task RefreshProductsAsync()
+    {
+        if (_virtualize is null)
+        {
+            return;
+        }
+
+        await _virtualize.RefreshDataAsync();
+        StateHasChanged();
+    }
 
     private async ValueTask<ItemsProviderResult<ProductCardDTO>> LoadProductsAsync(ItemsProviderRequest request)
     {
         try
         {
             var take = request.Count <= 0 ? 12 : request.Count;
-            var page = await ApiProductsClient.GetProductsAsync(request.StartIndex, take);
+            var selectedTagIds = _selectedTagIds.ToArray();
+            var page = await ApiProductsClient.GetProductsAsync(request.StartIndex, take, selectedTagIds);
             _errorMessage = null;
 
             return new ItemsProviderResult<ProductCardDTO>(page.Items, page.TotalCount);

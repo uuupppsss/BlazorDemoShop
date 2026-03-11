@@ -111,6 +111,7 @@ namespace ApiDemoShop.Services
             try
             {
                 var user = await _context.Users
+                    .Include(u => u.Role)
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null)
@@ -155,6 +156,7 @@ namespace ApiDemoShop.Services
                 {
                     Success = true,
                     Message = "Вход выполнен успешно",
+                    Role = user.Role.Title,
                     Token = token,
                     UserName = user.Username,
                     Email = user.Email,
@@ -193,6 +195,7 @@ namespace ApiDemoShop.Services
             try
             {
                 var user = await _context.Users
+                    .Include(u => u.Role)
                     .FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null)
@@ -256,6 +259,7 @@ namespace ApiDemoShop.Services
                 {
                     Success = true,
                     Message = "Email подтвержден",
+                    Role = user.Role.Title,
                     Token = token,
                     UserName = user.Username,
                     Email = user.Email,

@@ -75,6 +75,11 @@ namespace BlazorDemoShop
                     claims.Add(new Claim(ClaimTypes.Email, request.Email));
                 }
 
+                if (!string.IsNullOrWhiteSpace(request.Role))
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, request.Role));
+                }
+
                 if (!string.IsNullOrWhiteSpace(request.Token))
                 {
                     claims.Add(new Claim(AuthClaimTypes.AccessToken, request.Token));

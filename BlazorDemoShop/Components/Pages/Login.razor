@@ -90,6 +90,7 @@
                 UserId = response.UserId,
                 UserName = response.UserName ?? _model.Email,
                 Email = response.Email,
+                Role = response.Role,
                 Token = response.Token,
                 TokenExpiration = response.TokenExpiration
             });

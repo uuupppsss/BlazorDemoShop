@@ -30,7 +30,7 @@ namespace ApiDemoShop.Migrations
                     {
                         1,
                         "admin",
-                        HashService.HashMethod("admin123"), // Метод хэширования пароля
+                        HashService.HashMethod("admin123"), 
                         "admin@example.com",
                         "+1234567890",
                         1 // role_Id = admin

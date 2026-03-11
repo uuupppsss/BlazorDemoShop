@@ -27,10 +27,28 @@
 
         <div class="card product-details-card">
             <div class="product-details-image-wrap">
+                <button type="button"
+                        class="product-carousel-nav product-carousel-prev"
+                        disabled="@(_productImages.Count <= 1)"
+                        @onclick="ShowPreviousImage">
+                    ‹
+                </button>
+
                 <img class="product-details-image"
-                     src="@GetImageUrl(_product.MainImage)"
+                     src="@CurrentImageUrl"
                      alt="@_product.Name"
                      loading="lazy" />
+
+                <button type="button"
+                        class="product-carousel-nav product-carousel-next"
+                        disabled="@(_productImages.Count <= 1)"
+                        @onclick="ShowNextImage">
+                    ›
+                </button>
+
+                <div class="product-carousel-counter">
+                    @(_activeImageIndex + 1) / @_productImages.Count
+                </div>
             </div>
 
             <div class="card-body">
@@ -41,18 +59,19 @@
             </div>
         </div>
 
-        <AuthorizeView>
-            <Authorized Context="auth">
-                <button  class="buy-button">
-                    В корзину
+        <AuthorizeView Roles="user">
+            <Authorized>
+                <button class="buy-button">
+                    Add to cart
                 </button>
             </Authorized>
-
         </AuthorizeView>
 
         <AuthorizeView Roles="admin">
-            <Authorized Context="auth">
-                Кнопки для админа
+            <Authorized>
+                <NavLink class="btn btn-outline-secondary mt-3" href="@($"/products/{_product.Id}/edit")">
+                    Edit product
+                </NavLink>
             </Authorized>
         </AuthorizeView>
     }
@@ -66,18 +85,36 @@
     public int Id { get; set; }
 
     private bool _isLoading = true;
+    private int _activeImageIndex;
     private string? _errorMessage;
     private ProductDTO? _product;
+    private List<string> _productImages = new();
+
+    private string CurrentImageUrl
+        => _productImages.Count == 0
+            ? PlaceholderImage
+            : _productImages[_activeImageIndex];
 
     protected override async Task OnParametersSetAsync()
     {
         _isLoading = true;
         _errorMessage = null;
         _product = null;
+        _productImages = new List<string>();
+        _activeImageIndex = 0;
 
         try
         {
             _product = await ApiProductsClient.GetProductByIdAsync(Id);
+
+            if (_product is not null)
+            {
+                _productImages = NormalizeImageUrls(_product.Images);
+                if (_productImages.Count == 0)
+                {
+                    _productImages.Add(GetImageUrl(_product.MainImage));
+                }
+            }
         }
         catch
         {
@@ -87,6 +124,34 @@
         {
             _isLoading = false;
         }
+    }
+
+    private void ShowPreviousImage()
+    {
+        if (_productImages.Count <= 1)
+        {
+            return;
+        }
+
+        _activeImageIndex = (_activeImageIndex - 1 + _productImages.Count) % _productImages.Count;
+    }
+
+    private void ShowNextImage()
+    {
+        if (_productImages.Count <= 1)
+        {
+            return;
+        }
+
+        _activeImageIndex = (_activeImageIndex + 1) % _productImages.Count;
+    }
+
+    private static List<string> NormalizeImageUrls(IEnumerable<string>? imageUrls)
+    {
+        return (imageUrls ?? Array.Empty<string>())
+            .Select(GetImageUrl)
+            .Distinct()
+            .ToList();
     }
 
     private static string GetImageUrl(string? imageUrl)
