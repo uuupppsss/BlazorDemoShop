@@ -22,9 +22,6 @@ namespace ApiDemoShop.Migrations
                     { 3, "superuser" }
                 });
 
-            // Добавление пользователей с зашифрованными паролями
-            // Внимание: в реальном проекте пароли должны быть захэшированы!
-            // Здесь используется простой MD5 хэш для демонстрации
             migrationBuilder.InsertData(
                 table: "User",
                 columns: new[] { "id", "Username", "Password", "Email", "ContactPhone", "role_Id" },
@@ -61,7 +58,6 @@ namespace ApiDemoShop.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Удаление добавленных пользователей
             migrationBuilder.DeleteData(
                 table: "User",
                 keyColumn: "id",

@@ -68,7 +68,6 @@
 
         try
         {
-            // 1) Уведомляем API
             var token = user.FindFirst(AuthClaimTypes.AccessToken)?.Value;
             await ApiAuthClient.LogoutAsync(token);
         }
@@ -79,13 +78,13 @@
 
         try
         {
-            // 2) очищаем локальную auth-cookie
+            // очищаем локальную auth-cookie
             await JsRuntime.InvokeVoidAsync("authSession.signOut");
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
         catch
         {
-            _logoutError = "Не удалось завершить локальную сессию. Обновите страницу и попробуйте снова.";
+            _logoutError = "Не удалось завершить локальную сессию. ";
         }
     }
 }

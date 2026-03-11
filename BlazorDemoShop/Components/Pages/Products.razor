@@ -6,7 +6,6 @@
 
 <section class="page-shell products-shell">
     <h1>Каталог товаров</h1>
-    <p class="mb-3">Прокручивайте страницу вниз: карточки подгружаются автоматически.</p>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
@@ -71,7 +70,7 @@
         }
         catch
         {
-            _errorMessage = "Не удалось загрузить товары. Проверьте подключение к API.";
+            _errorMessage = "Не удалось загрузить товары.";
             return new ItemsProviderResult<ProductCardDTO>(Array.Empty<ProductCardDTO>(), 0);
         }
     }

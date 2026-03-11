@@ -40,6 +40,21 @@
                 <NavLink class="btn btn-primary" href="/products">Назад к каталогу</NavLink>
             </div>
         </div>
+
+        <AuthorizeView>
+            <Authorized Context="auth">
+                <button  class="buy-button">
+                    В корзину
+                </button>
+            </Authorized>
+
+        </AuthorizeView>
+
+        <AuthorizeView Roles="admin">
+            <Authorized Context="auth">
+                Кнопки для админа
+            </Authorized>
+        </AuthorizeView>
     }
 </section>
 
@@ -66,7 +81,7 @@
         }
         catch
         {
-            _errorMessage = "Не удалось загрузить товар. Проверьте подключение к API.";
+            _errorMessage = "Не удалось загрузить товар.";
         }
         finally
         {
