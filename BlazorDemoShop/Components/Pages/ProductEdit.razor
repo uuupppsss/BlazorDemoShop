@@ -34,7 +34,7 @@
             <div class="alert alert-success mb-3" role="alert">@_successMessage</div>
         }
 
-        <EditForm EditContext="_editContext" OnValidSubmit="HandleUpdateProductAsync" class="product-create-form">
+        <EditForm Model="_model" OnValidSubmit="HandleUpdateProductAsync" class="product-create-form">
             <DataAnnotationsValidator />
             <ValidationSummary class="mb-2" />
 
@@ -170,7 +170,6 @@
     public int Id { get; set; }
 
     private ProductEditInputModel _model = new();
-    private EditContext _editContext = default!;
     private readonly HashSet<int> _selectedTagIds = new();
     private readonly List<string> _imageUrls = new();
     private List<ProductTypeDTO> _tagFilters = new();
@@ -252,7 +251,6 @@
             Description = product.Description,
             Price = product.Price
         };
-        _editContext = new EditContext(_model);
 
         _selectedTagIds.Clear();
         foreach (var tag in product.Tags ?? new List<TagDTO>())
@@ -394,7 +392,7 @@
         [StringLength(255, ErrorMessage = "Описание не должно превышать 255 символов")]
         public string? Description { get; set; }
 
-        [Range(typeof(decimal), "0.01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
+        [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
         public decimal Price { get; set; }
     }
 }
