@@ -33,6 +33,14 @@
                 <p class="card-text mb-0"><strong>Email:</strong> @_profile.Email</p>
             </div>
         </div>
+
+        <AuthorizeView Roles="user">
+            <Authorized>
+                <NavLink class="btn btn-outline-secondary mt-3" href="/orders">
+                    Мои заказы
+                </NavLink>
+            </Authorized>
+        </AuthorizeView>
     }
 </section>
 

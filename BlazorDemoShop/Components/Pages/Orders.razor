@@ -1,0 +1,112 @@
+@page "/orders"
+@attribute [Authorize(Roles = "user")]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Globalization
+
+<PageTitle>Мои заказы</PageTitle>
+
+<section class="page-shell orders-shell">
+    <h1 class="mb-3">Мои заказы</h1>
+
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем заказы...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_orders.Count == 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            У вас пока нет заказов. <a href="/products">Перейти в каталог</a>
+        </div>
+    }
+    else
+    {
+        <div class="orders-list">
+            @foreach (var order in _orders)
+            {
+                <article class="card order-list-card @OrderStatusUiHelper.GetCardCssClass(order.StatusTitle)">
+                    <div class="card-body">
+                        <div class="order-list-row">
+                            <span>Заказ №@order.Id</span>
+                            <strong>@FormatPrice(order.FullCost)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Создан</span>
+                            <strong>@FormatDateTime(order.CreateDate)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Статус</span>
+                            <span class="@OrderStatusUiHelper.GetBadgeCssClass(order.StatusTitle)">
+                                @OrderStatusUiHelper.GetDisplayTitle(order.StatusTitle)
+                            </span>
+                        </div>
+
+                        <NavLink class="btn btn-primary mt-2" href="@($"/orders/{order.Id}")">
+                            Открыть заказ
+                        </NavLink>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private List<OrderDTO> _orders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _orders = new List<OrderDTO>();
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _errorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            _orders = await ApiProductsClient.GetMyOrdersAsync(accessToken);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+
+    private static string FormatDateTime(DateTime dateTime)
+    {
+        return dateTime.ToString("dd.MM.yyyy HH:mm", DateTimeCulture);
+    }
+}

@@ -57,7 +57,11 @@
             <div class="mb-3">
                 <label for="product-price" class="form-label">Цена</label>
                 <InputNumber id="product-price" class="form-control" @bind-Value="_model.Price" />
-                
+            </div>
+
+            <div class="mb-3">
+                <label for="product-count" class="form-label">Количество в наличии</label>
+                <InputNumber id="product-count" class="form-control" @bind-Value="_model.Count" />
             </div>
             
             <div class="card tag-picker-card mb-3">
@@ -315,7 +319,7 @@
                 Name = _model.Name.Trim(),
                 Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
                 Price = _model.Price,
-                Count = 0,
+                Count = _model.Count,
                 TimeBought = 0,
                 TagIds = _selectedTagIds.Count == 0 ? null : _selectedTagIds.ToList(),
                 ImageUrls = _imageUrls.Count == 0 ? null : _imageUrls.ToList()
@@ -360,5 +364,8 @@
 
         [Range(typeof(decimal), "0,01", "999999999", ErrorMessage = "Цена должна быть больше 0")]
         public decimal Price { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Количество не может быть отрицательным")]
+        public int Count { get; set; }
     }
 }

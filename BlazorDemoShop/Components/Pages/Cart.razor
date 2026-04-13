@@ -1,0 +1,327 @@
+﻿@page "/cart"
+@attribute [Authorize(Roles = "user")]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@using System.Globalization
+
+<PageTitle>Корзина</PageTitle>
+
+<section class="page-shell cart-shell">
+    <div class="cart-header">
+        <h1 class="mb-1">Корзина</h1>
+        <p class="mb-0">Проверьте состав заказа перед оформлением.</p>
+    </div>
+
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем корзину...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_items.Count == 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            Корзина пуста. <a href="/products">Перейти в каталог</a>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_actionErrorMessage))
+        {
+            <div class="alert alert-danger mb-3" role="alert">
+                @_actionErrorMessage
+            </div>
+        }
+
+        <div class="cart-layout">
+            <div class="cart-items">
+                @foreach (var item in _items)
+                {
+                    var isItemBusy = IsItemBusy(item.Id);
+
+                    <article class="card cart-item">
+                        <div class="cart-item-image-wrap">
+                            <img class="cart-item-image"
+                                 src="@GetImageUrl(item.ProductImage)"
+                                 alt="@GetProductTitle(item)"
+                                 loading="lazy" />
+                        </div>
+
+                        <div class="card-body cart-item-body">
+                            <div>
+                                <h5 class="card-title mb-2">@GetProductTitle(item)</h5>
+                                <p class="cart-item-meta">Артикул: #@item.ProductId</p>
+                                <p class="product-card-price mb-0">@FormatPrice(item.ProductPrice ?? 0m)</p>
+                                @if (item.ProductAvailableCount <= 0)
+                                {
+                                    <p class="product-availability product-availability-out mt-2 mb-0">Нет в наличии</p>
+                                }
+                            </div>
+
+                            <div class="cart-item-controls">
+                                <div class="cart-qty" role="group" aria-label="Количество товара">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary cart-qty-btn"
+                                            aria-label="Уменьшить количество"
+                                            disabled="@(isItemBusy || item.Count <= 1)"
+                                            @onclick="() => DecreaseCountAsync(item)">
+                                        -
+                                    </button>
+                                    <span class="cart-qty-value">@item.Count</span>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary cart-qty-btn"
+                                            aria-label="Увеличить количество"
+                                            disabled="@(isItemBusy || item.ProductAvailableCount <= 0)"
+                                            @onclick="() => IncreaseCountAsync(item)">
+                                        +
+                                    </button>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-link cart-remove-btn"
+                                        disabled="@isItemBusy"
+                                        @onclick="() => RemoveItemAsync(item.Id)">
+                                    Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <aside class="card cart-summary">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">Ваш заказ</h2>
+
+                    <div class="cart-summary-row">
+                        <span>Товары (@TotalCount шт.)</span>
+                        <strong>@FormatPrice(TotalPrice)</strong>
+                    </div>
+
+                    <div class="cart-summary-row">
+                        <span>Доставка</span>
+                        <strong>Бесплатно</strong>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="cart-summary-row cart-summary-total">
+                        <span>Итого</span>
+                        <strong>@FormatPrice(TotalPrice)</strong>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-success w-100 mt-3"
+                            disabled="@(_isCreatingOrder || _items.Count == 0)"
+                            @onclick="CreateOrderAsync">
+                        @(_isCreatingOrder ? "Оформляем..." : "Оформить заказ")
+                    </button>
+                </div>
+            </aside>
+        </div>
+    }
+</section>
+
+@code {
+    private const string PlaceholderImage = "https://placehold.co/640x420/efe4d4/5f4638?text=No+Image";
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private readonly HashSet<int> _busyItemIds = new();
+    private List<BasketItemDTO> _items = new();
+    private bool _isLoading = true;
+    private bool _isCreatingOrder;
+    private string? _errorMessage;
+    private string? _actionErrorMessage;
+
+    private int TotalCount => _items.Sum(x => x.Count);
+    private decimal TotalPrice => _items.Sum(x => (x.ProductPrice ?? 0m) * x.Count);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBasketAsync();
+    }
+
+    private async Task LoadBasketAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _actionErrorMessage = null;
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _errorMessage = "Не удалось определить токен авторизации.";
+                _items = new List<BasketItemDTO>();
+                return;
+            }
+
+            _items = await ApiProductsClient.GetBasketItemsAsync(accessToken);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            _items = new List<BasketItemDTO>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task IncreaseCountAsync(BasketItemDTO item)
+    {
+        await ChangeItemCountAsync(item, item.Count + 1);
+    }
+
+    private async Task DecreaseCountAsync(BasketItemDTO item)
+    {
+        if (item.Count <= 1)
+        {
+            return;
+        }
+
+        await ChangeItemCountAsync(item, item.Count - 1);
+    }
+
+    private async Task ChangeItemCountAsync(BasketItemDTO item, int newCount)
+    {
+        if (newCount < 1 || IsItemBusy(item.Id))
+        {
+            return;
+        }
+
+        _actionErrorMessage = null;
+        _busyItemIds.Add(item.Id);
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            var updatedItem = await ApiProductsClient.UpdateBasketItemCountAsync(item.Id, newCount, accessToken);
+            ReplaceItem(updatedItem);
+        }
+        catch (Exception ex)
+        {
+            _actionErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _busyItemIds.Remove(item.Id);
+        }
+    }
+
+    private async Task RemoveItemAsync(int itemId)
+    {
+        if (IsItemBusy(itemId))
+        {
+            return;
+        }
+
+        _actionErrorMessage = null;
+        _busyItemIds.Add(itemId);
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            await ApiProductsClient.RemoveBasketItemAsync(itemId, accessToken);
+            _items = _items.Where(x => x.Id != itemId).ToList();
+        }
+        catch (Exception ex)
+        {
+            _actionErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _busyItemIds.Remove(itemId);
+        }
+    }
+
+    private async Task CreateOrderAsync()
+    {
+        if (_isCreatingOrder || _items.Count == 0)
+        {
+            return;
+        }
+
+        _actionErrorMessage = null;
+        _isCreatingOrder = true;
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            var order = await ApiProductsClient.CreateOrderAsync(accessToken);
+            NavigationManager.NavigateTo($"/orders/{order.Id}");
+        }
+        catch (Exception ex)
+        {
+            _actionErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isCreatingOrder = false;
+        }
+    }
+
+    private bool IsItemBusy(int itemId)
+    {
+        return _busyItemIds.Contains(itemId);
+    }
+
+    private void ReplaceItem(BasketItemDTO updatedItem)
+    {
+        var index = _items.FindIndex(x => x.Id == updatedItem.Id);
+
+        if (index >= 0)
+        {
+            _items[index] = updatedItem;
+        }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string GetProductTitle(BasketItemDTO item)
+    {
+        return string.IsNullOrWhiteSpace(item.ProductName)
+            ? $"Товар #{item.ProductId}"
+            : item.ProductName;
+    }
+
+    private static string GetImageUrl(string? imageUrl)
+    {
+        return string.IsNullOrWhiteSpace(imageUrl) ? PlaceholderImage : imageUrl;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+}

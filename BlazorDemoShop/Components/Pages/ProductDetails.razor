@@ -1,5 +1,6 @@
-@page "/products/{Id:int}"
+﻿@page "/products/{Id:int}"
 @inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @using System.Globalization
 
 <PageTitle>Товар</PageTitle>
@@ -53,6 +54,9 @@
 
             <div class="card-body">
                 <p class="product-card-price mb-2">@FormatPrice(_product.Price)</p>
+                <p class="product-availability @(IsOutOfStock ? "product-availability-out" : "product-availability-in") mb-2">
+                    @(IsOutOfStock ? "Нет в наличии" : $"В наличии: {_product.Count} шт.")
+                </p>
                 <p class="mb-2">@GetDescription(_product.Description)</p>
                 <p class="text-muted mb-4">Купили: @_product.TimeBought раз</p>
                 <NavLink class="btn btn-primary" href="/products">Назад к каталогу</NavLink>
@@ -61,9 +65,26 @@
 
         <AuthorizeView Roles="user">
             <Authorized>
-                <button class="buy-button">
-                    Add to cart
+                <button class="buy-button"
+                        disabled="@(_isAddingToBasket || IsOutOfStock)"
+                        @onclick="HandleAddToBasketAsync">
+                    <span class="buy-button-icon buy-button-cart-icon" aria-hidden="true"></span>
+                    <span>@GetBuyButtonTitle()</span>
                 </button>
+
+                @if (!string.IsNullOrWhiteSpace(_basketSuccessMessage))
+                {
+                    <div class="alert alert-success mt-3 mb-0" role="alert">
+                        @_basketSuccessMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_basketErrorMessage))
+                {
+                    <div class="alert alert-danger mt-3 mb-0" role="alert">
+                        @_basketErrorMessage
+                    </div>
+                }
             </Authorized>
         </AuthorizeView>
 
@@ -85,10 +106,14 @@
     public int Id { get; set; }
 
     private bool _isLoading = true;
+    private bool _isAddingToBasket;
     private int _activeImageIndex;
     private string? _errorMessage;
+    private string? _basketErrorMessage;
+    private string? _basketSuccessMessage;
     private ProductDTO? _product;
     private List<string> _productImages = new();
+    private bool IsOutOfStock => _product is null || _product.Count <= 0;
 
     private string CurrentImageUrl
         => _productImages.Count == 0
@@ -99,6 +124,8 @@
     {
         _isLoading = true;
         _errorMessage = null;
+        _basketErrorMessage = null;
+        _basketSuccessMessage = null;
         _product = null;
         _productImages = new List<string>();
         _activeImageIndex = 0;
@@ -146,6 +173,41 @@
         _activeImageIndex = (_activeImageIndex + 1) % _productImages.Count;
     }
 
+    private async Task HandleAddToBasketAsync()
+    {
+        if (_product is null || _isAddingToBasket || IsOutOfStock)
+        {
+            return;
+        }
+
+        _isAddingToBasket = true;
+        _basketErrorMessage = null;
+        _basketSuccessMessage = null;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _basketErrorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            await ApiProductsClient.AddToBasketAsync(_product.Id, 1, accessToken);
+            _basketSuccessMessage = "Товар добавлен в корзину.";
+        }
+        catch (Exception ex)
+        {
+            _basketErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isAddingToBasket = false;
+        }
+    }
+
     private static List<string> NormalizeImageUrls(IEnumerable<string>? imageUrls)
     {
         return (imageUrls ?? Array.Empty<string>())
@@ -169,5 +231,15 @@
     private static string FormatPrice(decimal price)
     {
         return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+
+    private string GetBuyButtonTitle()
+    {
+        if (IsOutOfStock)
+        {
+            return "Нет в наличии";
+        }
+
+        return _isAddingToBasket ? "Добавляем..." : "Добавить в корзину";
     }
 }

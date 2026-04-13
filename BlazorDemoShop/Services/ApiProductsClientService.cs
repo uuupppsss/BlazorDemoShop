@@ -202,5 +202,414 @@ namespace BlazorDemoShop.Services
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<ProductDTO>(cancellationToken: cancellationToken);
         }
+
+        public async Task<List<BasketItemDTO>> GetBasketItemsAsync(string? token, CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/basket");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для просмотра корзины.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось загрузить корзину."
+                    : message);
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<List<BasketItemDTO>>(cancellationToken: cancellationToken);
+            return result ?? new List<BasketItemDTO>();
+        }
+
+        public async Task<BasketItemDTO> AddToBasketAsync(
+            int productId,
+            int count,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/basket/items")
+            {
+                Content = JsonContent.Create(new CreateBasketItemDTO
+                {
+                    ProductId = productId,
+                    Count = count,
+                    UserId = 0
+                })
+            };
+
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для добавления товара в корзину.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new InvalidOperationException("Товар не найден.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось добавить товар в корзину."
+                    : message);
+            }
+
+            var basketItem = await response.Content.ReadFromJsonAsync<BasketItemDTO>(cancellationToken: cancellationToken);
+            if (basketItem is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при добавлении товара в корзину.");
+            }
+
+            return basketItem;
+        }
+
+        public async Task<BasketItemDTO> UpdateBasketItemCountAsync(
+            int basketItemId,
+            int count,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, $"api/basket/items/{basketItemId}")
+            {
+                Content = JsonContent.Create(new UpdateBasketItemDTO
+                {
+                    Id = basketItemId,
+                    Count = count
+                })
+            };
+
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для изменения количества товара.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new InvalidOperationException("Позиция корзины не найдена.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось изменить количество товара."
+                    : message);
+            }
+
+            var basketItem = await response.Content.ReadFromJsonAsync<BasketItemDTO>(cancellationToken: cancellationToken);
+            if (basketItem is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при обновлении количества товара.");
+            }
+
+            return basketItem;
+        }
+
+        public async Task RemoveBasketItemAsync(
+            int basketItemId,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Delete, $"api/basket/items/{basketItemId}");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для удаления товара из корзины.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new InvalidOperationException("Позиция корзины не найдена.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось удалить товар из корзины."
+                    : message);
+            }
+        }
+
+        public async Task<OrderDTO> CreateOrderAsync(
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/orders");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для оформления заказа.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось оформить заказ: корзина пуста."
+                    : message);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось оформить заказ."
+                    : message);
+            }
+
+            var order = await response.Content.ReadFromJsonAsync<OrderDTO>(cancellationToken: cancellationToken);
+            if (order is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при создании заказа.");
+            }
+
+            return order;
+        }
+
+        public async Task<OrderDTO> CancelOrderAsync(
+            int orderId,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"api/orders/{orderId}/cancel");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для отмены заказа.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                var notFoundMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(notFoundMessage)
+                    ? "Заказ не найден."
+                    : notFoundMessage);
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var badRequestMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(badRequestMessage)
+                    ? "Не удалось отменить заказ."
+                    : badRequestMessage);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось отменить заказ."
+                    : message);
+            }
+
+            var order = await response.Content.ReadFromJsonAsync<OrderDTO>(cancellationToken: cancellationToken);
+            if (order is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при отмене заказа.");
+            }
+
+            return order;
+        }
+
+        public async Task<OrderDTO?> GetOrderByIdAsync(
+            int orderId,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/orders/{orderId}");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для просмотра заказа.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить данные заказа."
+                    : message);
+            }
+
+            return await response.Content.ReadFromJsonAsync<OrderDTO>(cancellationToken: cancellationToken);
+        }
+
+        public async Task<List<OrderDTO>> GetMyOrdersAsync(
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/orders/mine");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для просмотра заказов.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить список заказов."
+                    : message);
+            }
+
+            var orders = await response.Content.ReadFromJsonAsync<List<OrderDTO>>(cancellationToken: cancellationToken);
+            return orders ?? new List<OrderDTO>();
+        }
+
+        public async Task<List<OrderDTO>> GetAllOrdersAsync(
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/orders/all");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для просмотра всех заказов.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить список всех заказов."
+                    : message);
+            }
+
+            var orders = await response.Content.ReadFromJsonAsync<List<OrderDTO>>(cancellationToken: cancellationToken);
+            return orders ?? new List<OrderDTO>();
+        }
+
+        public async Task<List<OrderStatusDTO>> GetOrderStatusesAsync(
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/orders/statuses");
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для получения статусов заказа.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить статусы заказов."
+                    : message);
+            }
+
+            var statuses = await response.Content.ReadFromJsonAsync<List<OrderStatusDTO>>(cancellationToken: cancellationToken);
+            return statuses ?? new List<OrderStatusDTO>();
+        }
+
+        public async Task<OrderDTO> UpdateOrderStatusAsync(
+            int orderId,
+            int statusId,
+            string? token,
+            DateTime? recieveDate = null,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, $"api/orders/{orderId}/status")
+            {
+                Content = JsonContent.Create(new UpdateOrderStatusDTO
+                {
+                    OrderId = orderId,
+                    StatusId = statusId,
+                    RecieveDate = recieveDate
+                })
+            };
+
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для изменения статуса заказа.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                var notFoundMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(notFoundMessage)
+                    ? "Заказ или статус не найден."
+                    : notFoundMessage);
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var badRequestMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(badRequestMessage)
+                    ? "Не удалось изменить статус заказа."
+                    : badRequestMessage);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось изменить статус заказа."
+                    : message);
+            }
+
+            var order = await response.Content.ReadFromJsonAsync<OrderDTO>(cancellationToken: cancellationToken);
+            if (order is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при изменении статуса заказа.");
+            }
+
+            return order;
+        }
+
+        private static void AppendAuthHeader(HttpRequestMessage request, string? token)
+        {
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+        }
     }
 }

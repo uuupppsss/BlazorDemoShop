@@ -1,0 +1,240 @@
+@page "/orders/{Id:int}"
+@attribute [Authorize(Roles = "user")]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Globalization
+
+<PageTitle>Заказ</PageTitle>
+
+<section class="page-shell order-shell">
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем заказ...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_order is null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Заказ не найден.
+        </div>
+    }
+    else
+    {
+        <h1 class="mb-2">Заказ №@_order.Id</h1>
+        <p class="mb-3">Спасибо за покупку. Мы начали обработку вашего заказа.</p>
+
+        <div class="@OrderStatusUiHelper.GetBadgeCssClass(_order.StatusTitle)">
+            @OrderStatusUiHelper.GetDisplayTitle(_order.StatusTitle)
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_cancelErrorMessage))
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                @_cancelErrorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_cancelSuccessMessage))
+        {
+            <div class="alert alert-success mt-3" role="alert">
+                @_cancelSuccessMessage
+            </div>
+        }
+
+        @if (CanCancelOrder)
+        {
+            @if (_showCancelConfirmation)
+            {
+                <div class="alert alert-warning mt-3 mb-0" role="alert">
+                    <p class="mb-2 fw-semibold">Отменить заказ?</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button"
+                                class="btn btn-danger"
+                                disabled="@_isCancelling"
+                                @onclick="CancelOrderAsync">
+                            @(_isCancelling ? "Отменяем..." : "Да")
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled="@_isCancelling"
+                                @onclick="HideCancelConfirmation">
+                            Нет
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <button type="button"
+                        class="btn btn-outline-danger mt-3"
+                        disabled="@_isCancelling"
+                        @onclick="ShowCancelConfirmation">
+                    Отменить заказ
+                </button>
+            }
+        }
+
+        <div class="card order-info-card mt-3">
+            <div class="card-body">
+                <div class="order-info-row">
+                    <span>Стоимость заказа</span>
+                    <strong>@FormatPrice(_order.FullCost)</strong>
+                </div>
+
+                <div class="order-info-row">
+                    <span>Время заказа</span>
+                    <strong>@FormatDateTime(_order.CreateDate)</strong>
+                </div>
+
+                <div class="order-info-row order-info-row-last">
+                    <span>Статус</span>
+                    <span class="@OrderStatusUiHelper.GetBadgeCssClass(_order.StatusTitle)">
+                        @OrderStatusUiHelper.GetDisplayTitle(_order.StatusTitle)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        @if (_order.OrderItems.Count > 0)
+        {
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Состав заказа</h2>
+                    @foreach (var item in _order.OrderItems)
+                    {
+                        <div class="order-item-row">
+                            <span>@GetProductTitle(item)</span>
+                            <strong>@item.Count x @FormatPrice(item.ProductPrice ?? 0m)</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <NavLink class="btn btn-primary mt-3" href="/products">Продолжить покупки</NavLink>
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool _isLoading = true;
+    private bool _isCancelling;
+    private bool _showCancelConfirmation;
+    private string? _errorMessage;
+    private string? _cancelErrorMessage;
+    private string? _cancelSuccessMessage;
+    private OrderDTO? _order;
+
+    private bool CanCancelOrder => _order is not null && OrderStatusUiHelper.CanCancelByUser(_order.StatusTitle);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _cancelErrorMessage = null;
+        _cancelSuccessMessage = null;
+        _showCancelConfirmation = false;
+        _order = null;
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _errorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            _order = await ApiProductsClient.GetOrderByIdAsync(Id, accessToken);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ShowCancelConfirmation()
+    {
+        _cancelErrorMessage = null;
+        _cancelSuccessMessage = null;
+        _showCancelConfirmation = true;
+    }
+
+    private void HideCancelConfirmation()
+    {
+        _showCancelConfirmation = false;
+    }
+
+    private async Task CancelOrderAsync()
+    {
+        if (_order is null || !CanCancelOrder || _isCancelling)
+        {
+            return;
+        }
+
+        _isCancelling = true;
+        _cancelErrorMessage = null;
+        _cancelSuccessMessage = null;
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _cancelErrorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            var updatedOrder = await ApiProductsClient.CancelOrderAsync(_order.Id, accessToken);
+            _order = updatedOrder;
+            _showCancelConfirmation = false;
+            _cancelSuccessMessage = "Заказ отменен.";
+        }
+        catch (Exception ex)
+        {
+            _cancelErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isCancelling = false;
+        }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+
+    private static string FormatDateTime(DateTime dateTime)
+    {
+        return dateTime.ToString("dd.MM.yyyy HH:mm", DateTimeCulture);
+    }
+
+    private static string GetProductTitle(OrderItemDTO item)
+    {
+        return string.IsNullOrWhiteSpace(item.ProductName)
+            ? $"Товар #{item.ProductId}"
+            : item.ProductName;
+    }
+}

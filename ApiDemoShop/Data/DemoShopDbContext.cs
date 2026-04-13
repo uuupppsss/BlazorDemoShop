@@ -48,9 +48,9 @@ namespace ApiDemoShop.Data
             if (!optionsBuilder.IsConfigured)
             {
 
-                optionsBuilder.UseSqlServer("Server=192.168.200.35;Database=user26;user=user26;password=50371;TrustServerCertificate=true;MultipleActiveResultSets=true");
+                //optionsBuilder.UseSqlServer("Server=192.168.200.35;Database=user26;user=user26;password=50371;TrustServerCertificate=true;MultipleActiveResultSets=true");
 
-                //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=DemoShopDb;Trusted_Connection=True;MultipleActiveResultSets=true");
+                optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=DemoShopDb;Trusted_Connection=True;MultipleActiveResultSets=true");
             }
         }
 

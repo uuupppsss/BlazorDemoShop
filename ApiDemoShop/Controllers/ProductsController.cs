@@ -64,6 +64,7 @@ namespace ApiDemoShop.Controllers
                 .Select(x => new ProductCardDTO
                 {
                     Id = x.Id,
+                    Count = x.Count,
                     Name = x.Name,
                     Price = x.Price,
                     MainImage = x.ProductImages

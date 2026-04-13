@@ -1,0 +1,141 @@
+@page "/admin/orders"
+@attribute [Authorize(Roles = "admin")]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Globalization
+
+<PageTitle>Все заказы</PageTitle>
+
+<section class="page-shell admin-orders-shell">
+    <h1 class="mb-3">Все заказы</h1>
+
+    @if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем заказы...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_orders.Count == 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            Заказов пока нет.
+        </div>
+    }
+    else
+    {
+        <div class="orders-list">
+            @foreach (var order in _orders)
+            {
+                <article class="card order-list-card @OrderStatusUiHelper.GetCardCssClass(order.StatusTitle)">
+                    <div class="card-body">
+                        <div class="order-list-row">
+                            <span>Заказ №@order.Id</span>
+                            <strong>@FormatPrice(order.FullCost)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Пользователь</span>
+                            <strong>@GetUserTitle(order)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Контакты</span>
+                            <strong>@GetUserContacts(order)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Создан</span>
+                            <strong>@FormatDateTime(order.CreateDate)</strong>
+                        </div>
+
+                        <div class="order-list-row">
+                            <span>Статус</span>
+                            <span class="@OrderStatusUiHelper.GetBadgeCssClass(order.StatusTitle)">
+                                @OrderStatusUiHelper.GetDisplayTitle(order.StatusTitle)
+                            </span>
+                        </div>
+
+                        <div class="order-list-row order-list-row-last">
+                            <span>Позиции</span>
+                            <strong>@order.OrderItems.Count</strong>
+                        </div>
+
+                        <NavLink class="btn btn-outline-secondary mt-2" href="@($"/admin/orders/{order.Id}")">
+                            Детали заказа
+                        </NavLink>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private List<OrderDTO> _orders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _orders = new List<OrderDTO>();
+
+        try
+        {
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _errorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            _orders = await ApiProductsClient.GetAllOrdersAsync(accessToken);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string FormatPrice(decimal price)
+    {
+        return string.Format(PriceCulture, "{0:N2} ₽", price);
+    }
+
+    private static string FormatDateTime(DateTime dateTime)
+    {
+        return dateTime.ToString("dd.MM.yyyy HH:mm", DateTimeCulture);
+    }
+
+    private static string GetUserTitle(OrderDTO order)
+    {
+        return string.IsNullOrWhiteSpace(order.UserName)
+            ? $"Пользователь #{order.UserId}"
+            : $"{order.UserName} (#{order.UserId})";
+    }
+
+    private static string GetUserContacts(OrderDTO order)
+    {
+        var email = string.IsNullOrWhiteSpace(order.UserEmail) ? "email не указан" : order.UserEmail;
+        var phone = string.IsNullOrWhiteSpace(order.UserPhone) ? "телефон не указан" : order.UserPhone;
+        return $"{email}, {phone}";
+    }
+}
