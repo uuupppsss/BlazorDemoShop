@@ -9,6 +9,29 @@
 <section class="page-shell orders-shell">
     <h1 class="mb-3">Мои заказы</h1>
 
+    <section class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Номер заказа</label>
+                    <InputNumber TValue="int?" class="form-control" @bind-Value="_searchOrderId" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Дата создания</label>
+                    <InputDate TValue="DateTime?" class="form-control" @bind-Value="_searchDate" />
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="button" class="btn btn-primary" @onclick="SearchAsync" disabled="@_isLoading">
+                        Найти
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="ResetSearchAsync" disabled="@_isLoading">
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     @if (_isLoading)
     {
         <p class="loading-pill">Загружаем заказы...</p>
@@ -66,8 +89,27 @@
     private bool _isLoading = true;
     private string? _errorMessage;
     private List<OrderDTO> _orders = new();
+    private int? _searchOrderId;
+    private DateTime? _searchDate;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
+    {
+        return LoadOrdersAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        await LoadOrdersAsync();
+    }
+
+    private async Task ResetSearchAsync()
+    {
+        _searchOrderId = null;
+        _searchDate = null;
+        await LoadOrdersAsync();
+    }
+
+    private async Task LoadOrdersAsync()
     {
         _isLoading = true;
         _errorMessage = null;
@@ -82,7 +124,10 @@
                 return;
             }
 
-            _orders = await ApiProductsClient.GetMyOrdersAsync(accessToken);
+            _orders = await ApiProductsClient.GetMyOrdersAsync(
+                accessToken,
+                _searchOrderId,
+                _searchDate);
         }
         catch (Exception ex)
         {

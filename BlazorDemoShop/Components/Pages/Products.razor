@@ -13,10 +13,28 @@
                 <h5 class="mb-0">Фильтр по тегам</h5>
                 <button type="button"
                         class="btn btn-link btn-sm"
-                        disabled="@(!HasSelectedTags)"
+                        disabled="@(!HasActiveFilters)"
                         @onclick="ClearFiltersAsync">
                     Сбросить фильтры
                 </button>
+            </div>
+
+            <div class="row g-2 mt-2">
+                <div class="col-12 col-md-8">
+                    <input class="form-control"
+                           @bind="_searchNameQuery"
+                           @bind:event="oninput"
+                               placeholder="Поиск товара по названию" />
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="button" class="btn btn-primary" @onclick="SearchAsync">Найти</button>
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@(!HasActiveFilters)"
+                            @onclick="ClearFiltersAsync">
+                        Сбросить
+                    </button>
+                </div>
             </div>
 
             @if (_isFiltersLoading)
@@ -124,8 +142,9 @@
     private bool _isFiltersLoading = true;
     private string? _filtersErrorMessage;
     private string? _errorMessage;
+    private string? _searchNameQuery;
 
-    private bool HasSelectedTags => _selectedTagIds.Count > 0;
+    private bool HasActiveFilters => _selectedTagIds.Count > 0 || !string.IsNullOrWhiteSpace(_searchNameQuery);
 
     protected override async Task OnInitializedAsync()
     {
@@ -168,14 +187,20 @@
         await RefreshProductsAsync();
     }
 
+    private async Task SearchAsync()
+    {
+        await RefreshProductsAsync();
+    }
+
     private async Task ClearFiltersAsync()
     {
-        if (_selectedTagIds.Count == 0)
+        if (!HasActiveFilters)
         {
             return;
         }
 
         _selectedTagIds.Clear();
+        _searchNameQuery = null;
         await RefreshProductsAsync();
     }
 
@@ -196,7 +221,11 @@
         {
             var take = request.Count <= 0 ? 12 : request.Count;
             var selectedTagIds = _selectedTagIds.ToArray();
-            var page = await ApiProductsClient.GetProductsAsync(request.StartIndex, take, selectedTagIds);
+            var page = await ApiProductsClient.GetProductsAsync(
+                request.StartIndex,
+                take,
+                selectedTagIds,
+                _searchNameQuery);
             _errorMessage = null;
 
             return new ItemsProviderResult<ProductCardDTO>(page.Items, page.TotalCount);

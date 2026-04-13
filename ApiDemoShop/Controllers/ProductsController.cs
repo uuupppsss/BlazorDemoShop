@@ -39,15 +39,22 @@ namespace ApiDemoShop.Controllers
             [FromQuery] int skip = 0,
             [FromQuery] int take = 12,
             [FromQuery] int[]? tagIds = null,
+            [FromQuery] string? nameQuery = null,
             CancellationToken cancellationToken = default)
         {
             var safeSkip = Math.Max(0, skip);
             var safeTake = Math.Clamp(take, 1, 40);
             var normalizedTagIds = NormalizeTagIds(tagIds);
+            var normalizedNameQuery = nameQuery?.Trim();
 
             var productsQuery = _dbContext.Products
                 .AsNoTracking()
                 .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(normalizedNameQuery))
+            {
+                productsQuery = productsQuery.Where(p => EF.Functions.Like(p.Name, $"%{normalizedNameQuery}%"));
+            }
 
             foreach (var tagId in normalizedTagIds)
             {

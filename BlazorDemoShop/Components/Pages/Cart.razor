@@ -54,7 +54,9 @@
 
                         <div class="card-body cart-item-body">
                             <div>
-                                <h5 class="card-title mb-2">@GetProductTitle(item)</h5>
+                                <h5 class="card-title mb-2">
+                                    <NavLink href="@($"/products/{item.ProductId}")">@GetProductTitle(item)</NavLink>
+                                </h5>
                                 <p class="cart-item-meta">Артикул: #@item.ProductId</p>
                                 <p class="product-card-price mb-0">@FormatPrice(item.ProductPrice ?? 0m)</p>
                                 @if (item.ProductAvailableCount <= 0)

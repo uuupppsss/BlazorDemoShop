@@ -536,6 +536,135 @@ a:hover,
     max-width: 1020px;
 }
 
+.admin-report-shell {
+    max-width: 1040px;
+}
+
+.report-filters-card,
+.report-summary-card,
+.report-top-products-card,
+.report-chart-card {
+    background: linear-gradient(160deg, rgba(255, 254, 249, 0.98), rgba(247, 241, 230, 0.9));
+}
+
+.report-summary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.55rem;
+    border-bottom: 1px solid rgba(217, 196, 174, 0.65);
+}
+
+.report-summary-row-last {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+.report-bar-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 230px) minmax(0, 1fr) 120px;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0;
+}
+
+.report-bar-row + .report-bar-row {
+    border-top: 1px solid rgba(217, 196, 174, 0.55);
+}
+
+.report-bar-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.report-bar-label span {
+    font-size: 0.82rem;
+    color: #7b6a5a;
+}
+
+.report-bar-track {
+    height: 0.95rem;
+    border-radius: 999px;
+    background: rgba(217, 196, 174, 0.35);
+    overflow: hidden;
+}
+
+.report-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6f8b6e 0%, #8cae87 100%);
+}
+
+.report-bar-value {
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4f463c;
+}
+
+.report-bar-value small {
+    display: block;
+    font-size: 0.76rem;
+    color: #7b6a5a;
+    font-weight: 500;
+}
+
+.report-tag-card + .report-tag-card {
+    margin-top: 0.45rem;
+}
+
+.report-products-button {
+    min-width: 150px;
+}
+
+.report-products-panel {
+    border-top: 1px dashed rgba(217, 196, 174, 0.75);
+    margin-top: 0.45rem;
+    padding-top: 0.65rem;
+}
+
+.report-products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.report-products-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.report-products-item small {
+    color: #7b6a5a;
+}
+
+.report-stock {
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.report-stock-low {
+    color: #b14436;
+}
+
+.report-stock-medium {
+    color: #b08a14;
+}
+
+.report-stock-normal {
+    color: #4f6950;
+}
+
 .orders-list {
     display: flex;
     flex-direction: column;
@@ -1013,5 +1142,24 @@ code {
     .product-card-image-wrap {
         border-right: 0;
         border-bottom: 1px solid var(--border);
+    }
+
+    .report-summary-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .report-bar-row {
+        grid-template-columns: 1fr;
+        gap: 0.45rem;
+    }
+
+    .report-bar-value {
+        text-align: left;
+    }
+
+    .report-products-item {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }

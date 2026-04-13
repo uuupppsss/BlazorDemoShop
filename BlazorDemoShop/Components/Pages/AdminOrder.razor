@@ -85,6 +85,13 @@
                     </div>
                 }
 
+                @if (!CanEditOrderStatus)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        Статус завершенного или отмененного заказа редактировать нельзя.
+                    </div>
+                }
+
                 @if (_availableStatuses.Count == 0)
                 {
                     <div class="alert alert-warning mb-0" role="alert">
@@ -97,7 +104,7 @@
                         <select class="form-select"
                                 value="@_selectedStatusId"
                                 @onchange="OnStatusChanged"
-                                disabled="@_isUpdatingStatus">
+                                disabled="@(_isUpdatingStatus || !CanEditOrderStatus)">
                             @foreach (var status in _availableStatuses)
                             {
                                 <option value="@status.Id">@status.Title</option>
@@ -106,7 +113,7 @@
 
                         <button type="button"
                                 class="btn btn-success"
-                                disabled="@(_isUpdatingStatus || _selectedStatusId <= 0 || _selectedStatusId == _order.StatusId)"
+                                disabled="@(_isUpdatingStatus || !CanEditOrderStatus || _selectedStatusId <= 0 || _selectedStatusId == _order.StatusId)"
                                 @onclick="UpdateStatusAsync">
                             @(_isUpdatingStatus ? "Сохраняем..." : "Сохранить статус")
                         </button>
@@ -142,8 +149,12 @@
                                 @foreach (var item in _order.OrderItems)
                                 {
                                     <tr>
-                                        <td>@item.ProductId</td>
-                                        <td>@GetProductTitle(item)</td>
+                                        <td>
+                                            <NavLink href="@($"/products/{item.ProductId}")">@item.ProductId</NavLink>
+                                        </td>
+                                        <td>
+                                            <NavLink href="@($"/products/{item.ProductId}")">@GetProductTitle(item)</NavLink>
+                                        </td>
                                         <td class="text-end">@FormatPrice(item.ProductPrice ?? 0m)</td>
                                         <td class="text-end">@item.Count</td>
                                         <td class="text-end">@FormatPrice(item.TotalPrice)</td>
@@ -175,6 +186,8 @@
     private string? _statusUpdateSuccess;
     private OrderDTO? _order;
     private List<OrderStatusDTO> _availableStatuses = new();
+
+    private bool CanEditOrderStatus => _order is not null && OrderStatusUiHelper.CanEditByAdmin(_order.StatusTitle);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -215,7 +228,7 @@
 
     private async Task UpdateStatusAsync()
     {
-        if (_order is null || _selectedStatusId <= 0 || _isUpdatingStatus)
+        if (_order is null || !CanEditOrderStatus || _selectedStatusId <= 0 || _isUpdatingStatus)
         {
             return;
         }

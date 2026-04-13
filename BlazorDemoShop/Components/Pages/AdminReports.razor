@@ -1,0 +1,441 @@
+@page "/admin/reports"
+@attribute [Authorize(Roles = "admin")]
+@inject ApiProductsClientService ApiProductsClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Globalization
+
+<PageTitle>Отчет по продажам</PageTitle>
+
+<section class="page-shell admin-report-shell">
+    <h1 class="mb-2">Отчет по продажам</h1>
+    <p class="text-muted mb-3">Продажи по тегам за выбранный период по завершенным заказам.</p>
+
+    <div class="card report-filters-card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Период</label>
+                    <InputSelect class="form-select" @bind-Value="_periodMode">
+                        <option value="@PeriodMode.Custom">Произвольный диапазон</option>
+                        <option value="@PeriodMode.Month">Целый месяц</option>
+                        <option value="@PeriodMode.Year">Целый год</option>
+                    </InputSelect>
+                </div>
+
+                @if (_periodMode == PeriodMode.Custom)
+                {
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Дата с</label>
+                        <InputDate class="form-control" @bind-Value="_customDateFrom" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Дата по</label>
+                        <InputDate class="form-control" @bind-Value="_customDateTo" />
+                    </div>
+                }
+                else if (_periodMode == PeriodMode.Month)
+                {
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Год</label>
+                        <InputNumber class="form-control" @bind-Value="_monthYear" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Месяц</label>
+                        <InputSelect class="form-select" @bind-Value="_monthNumber">
+                            @for (var month = 1; month <= 12; month++)
+                            {
+                                <option value="@month">@GetMonthTitle(month)</option>
+                            }
+                        </InputSelect>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Год</label>
+                        <InputNumber class="form-control" @bind-Value="_yearNumber" />
+                    </div>
+                }
+
+                <div class="col-12 col-md-2">
+                    <button type="button"
+                            class="btn btn-primary w-100"
+                            disabled="@_isLoading"
+                            @onclick="LoadReportAsync">
+                        @(_isLoading ? "Строим..." : "Построить")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_isLoading)
+    {
+        <p class="loading-pill">Загружаем отчет...</p>
+    }
+    else if (_report is null)
+    {
+        <div class="alert alert-warning" role="alert">
+            Не удалось построить отчет.
+        </div>
+    }
+    else
+    {
+        <div class="card report-summary-card mb-3">
+            <div class="card-body">
+                <div class="report-summary-row">
+                    <span>Период</span>
+                    <strong>@FormatDate(_report.PeriodFrom) - @FormatDate(_report.PeriodTo)</strong>
+                </div>
+                <div class="report-summary-row">
+                    <span>Продано товаров</span>
+                    <strong>@_report.TotalSoldItems шт.</strong>
+                </div>
+                <div class="report-summary-row report-summary-row-last">
+                    <span>Тегов в отчете</span>
+                    <strong>@_report.Items.Count</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card report-top-products-card mb-3">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Топ 3 продаваемых товара</h2>
+
+                @if (_report.TopProducts.Count == 0)
+                {
+                    <p class="mb-0 text-muted">За выбранный период нет проданных товаров.</p>
+                }
+                else
+                {
+                    <div class="report-products-list">
+                        @foreach (var topItem in _report.TopProducts)
+                        {
+                            <div class="report-products-item">
+                                <div>
+                                    <NavLink href="@($"/products/{topItem.ProductId}")">
+                                        #@topItem.ProductId @topItem.ProductName
+                                    </NavLink>
+                                </div>
+                                <div class="text-end">
+                                    <div>@topItem.SoldItems шт.</div>
+                                    <small>@FormatPrice(topItem.Revenue)</small>
+                                    <div class="@GetStockCssClass(topItem.ProductStockCount)">@GetStockTitle(topItem.ProductStockCount)</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_tagProductsErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @_tagProductsErrorMessage
+            </div>
+        }
+
+        @if (_report.Items.Count == 0)
+        {
+            <div class="alert alert-warning" role="alert">
+                За выбранный период нет продаж по тегам.
+            </div>
+        }
+        else
+        {
+            <div class="card report-chart-card">
+                <div class="card-body">
+                    @foreach (var item in _report.Items)
+                    {
+                        var width = MaxSoldItems <= 0
+                            ? 0m
+                            : Math.Round(item.SoldItems * 100m / MaxSoldItems, 2);
+
+                        <article class="report-tag-card">
+                            <div class="report-bar-row">
+                                <div class="report-bar-label">
+                                    <strong>@item.TagTitle</strong>
+                                    <span>@GetTagTypeTitle(item.TagTypeTitle)</span>
+                                </div>
+
+                                <div class="report-bar-track">
+                                    <div class="report-bar-fill"
+                                         style="@($"width: {width.ToString(CultureInfo.InvariantCulture)}%;")"></div>
+                                </div>
+
+                                <div class="report-bar-value">
+                                    <div>@item.SoldItems шт.</div>
+                                    <small>@item.DistinctProducts товар(ов)</small>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm report-products-button mt-2"
+                                            disabled="@IsTagProductsLoading(item.TagId)"
+                                            @onclick="() => ToggleTagProductsAsync(item)">
+                                        @GetTagProductsButtonTitle(item.TagId)
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if (_expandedTagIds.Contains(item.TagId))
+                            {
+                                var productsReport = GetProductsReport(item.TagId);
+
+                                <div class="report-products-panel">
+                                    @if (productsReport is null)
+                                    {
+                                        <p class="mb-0 text-muted">Загружаем товары...</p>
+                                    }
+                                    else if (productsReport.Items.Count == 0)
+                                    {
+                                        <p class="mb-0 text-muted">По этому тегу нет проданных товаров в выбранном периоде.</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="mb-2 fw-semibold">
+                                            Товары по тегу "@productsReport.TagTitle" (всего: @productsReport.TotalSoldItems шт.)
+                                        </p>
+
+                                        <div class="report-products-list">
+                                            @foreach (var soldItem in productsReport.Items)
+                                            {
+                                                <div class="report-products-item">
+                                                    <div>
+                                                        <NavLink href="@($"/products/{soldItem.ProductId}")">
+                                                            #@soldItem.ProductId @soldItem.ProductName
+                                                        </NavLink>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div>@soldItem.SoldItems шт.</div>
+                                                        <small>@FormatPrice(soldItem.Revenue)</small>
+                                                        <div class="@GetStockCssClass(soldItem.ProductStockCount)">@GetStockTitle(soldItem.ProductStockCount)</div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo RuCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private PeriodMode _periodMode = PeriodMode.Custom;
+    private DateTime _customDateFrom = DateTime.Today.AddDays(-30);
+    private DateTime _customDateTo = DateTime.Today;
+    private int _monthYear = DateTime.Today.Year;
+    private int _monthNumber = DateTime.Today.Month;
+    private int _yearNumber = DateTime.Today.Year;
+
+    private readonly HashSet<int> _expandedTagIds = new();
+    private readonly Dictionary<int, SalesByTagProductsReportDTO> _productsReports = new();
+
+    private bool _isLoading;
+    private int? _loadingTagId;
+    private string? _errorMessage;
+    private string? _tagProductsErrorMessage;
+    private SalesByTagReportDTO? _report;
+
+    private int MaxSoldItems => _report?.Items.Count > 0 ? _report.Items.Max(x => x.SoldItems) : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReportAsync();
+    }
+
+    private async Task LoadReportAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _tagProductsErrorMessage = null;
+        _expandedTagIds.Clear();
+        _productsReports.Clear();
+
+        try
+        {
+            var (dateFrom, dateTo) = ResolvePeriod();
+            if (dateFrom > dateTo)
+            {
+                _report = null;
+                _errorMessage = "Дата начала периода не может быть позже даты окончания.";
+                return;
+            }
+
+            var accessToken = await GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                _report = null;
+                _errorMessage = "Не удалось определить токен авторизации.";
+                return;
+            }
+
+            _report = await ApiProductsClient.GetSalesByTagsReportAsync(dateFrom, dateTo, accessToken);
+        }
+        catch (Exception ex)
+        {
+            _report = null;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ToggleTagProductsAsync(SalesByTagReportItemDTO reportItem)
+    {
+        _tagProductsErrorMessage = null;
+
+        if (_expandedTagIds.Contains(reportItem.TagId))
+        {
+            _expandedTagIds.Remove(reportItem.TagId);
+            return;
+        }
+
+        if (_report is null)
+        {
+            return;
+        }
+
+        if (!_productsReports.ContainsKey(reportItem.TagId))
+        {
+            try
+            {
+                _loadingTagId = reportItem.TagId;
+
+                var accessToken = await GetAccessTokenAsync();
+                if (string.IsNullOrWhiteSpace(accessToken))
+                {
+                    _tagProductsErrorMessage = "Не удалось определить токен авторизации.";
+                    return;
+                }
+
+                var productsReport = await ApiProductsClient.GetSoldProductsByTagAsync(
+                    reportItem.TagId,
+                    _report.PeriodFrom,
+                    _report.PeriodTo,
+                    accessToken);
+
+                _productsReports[reportItem.TagId] = productsReport;
+            }
+            catch (Exception ex)
+            {
+                _tagProductsErrorMessage = ex.Message;
+                return;
+            }
+            finally
+            {
+                _loadingTagId = null;
+            }
+        }
+
+        _expandedTagIds.Add(reportItem.TagId);
+    }
+
+    private bool IsTagProductsLoading(int tagId)
+    {
+        return _loadingTagId == tagId;
+    }
+
+    private string GetTagProductsButtonTitle(int tagId)
+    {
+        if (IsTagProductsLoading(tagId))
+        {
+            return "Загружаем...";
+        }
+
+        return _expandedTagIds.Contains(tagId) ? "Скрыть товары" : "Посмотреть товары";
+    }
+
+    private SalesByTagProductsReportDTO? GetProductsReport(int tagId)
+    {
+        return _productsReports.TryGetValue(tagId, out var report) ? report : null;
+    }
+
+    private (DateTime DateFrom, DateTime DateTo) ResolvePeriod()
+    {
+        if (_periodMode == PeriodMode.Month)
+        {
+            var safeYear = Math.Clamp(_monthYear, 2000, 3000);
+            var safeMonth = Math.Clamp(_monthNumber, 1, 12);
+            var dateFrom = new DateTime(safeYear, safeMonth, 1);
+            var dateTo = dateFrom.AddMonths(1).AddDays(-1);
+            return (dateFrom, dateTo);
+        }
+
+        if (_periodMode == PeriodMode.Year)
+        {
+            var safeYear = Math.Clamp(_yearNumber, 2000, 3000);
+            var dateFrom = new DateTime(safeYear, 1, 1);
+            var dateTo = new DateTime(safeYear, 12, 31);
+            return (dateFrom, dateTo);
+        }
+
+        return (_customDateFrom.Date, _customDateTo.Date);
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string FormatDate(DateTime value)
+    {
+        return value.ToString("dd.MM.yyyy", RuCulture);
+    }
+
+    private static string FormatPrice(decimal value)
+    {
+        return string.Format(RuCulture, "{0:N2} ₽", value);
+    }
+
+    private static string GetMonthTitle(int month)
+    {
+        return RuCulture.DateTimeFormat.GetMonthName(month);
+    }
+
+    private static string GetTagTypeTitle(string? title)
+    {
+        return string.IsNullOrWhiteSpace(title) ? "Без типа тега" : title;
+    }
+
+    private static string GetStockCssClass(int stockCount)
+    {
+        if (stockCount < 5)
+        {
+            return "report-stock report-stock-low";
+        }
+
+        if (stockCount <= 10)
+        {
+            return "report-stock report-stock-medium";
+        }
+
+        return "report-stock report-stock-normal";
+    }
+
+    private static string GetStockTitle(int stockCount)
+    {
+        return $"Остаток: {stockCount} шт.";
+    }
+
+    private enum PeriodMode
+    {
+        Custom = 1,
+        Month = 2,
+        Year = 3
+    }
+}

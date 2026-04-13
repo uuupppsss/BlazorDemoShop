@@ -1,5 +1,6 @@
 using LibDemoShop;
 using Microsoft.AspNetCore.Components.Forms;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -21,6 +22,7 @@ namespace BlazorDemoShop.Services
             int skip,
             int take,
             IEnumerable<int>? tagIds = null,
+            string? nameQuery = null,
             CancellationToken cancellationToken = default)
         {
             var safeSkip = Math.Max(0, skip);
@@ -29,12 +31,18 @@ namespace BlazorDemoShop.Services
                 .Where(id => id > 0)
                 .Distinct()
                 .ToArray();
+            var normalizedNameQuery = nameQuery?.Trim();
 
             var queryBuilder = new StringBuilder($"api/products?skip={safeSkip}&take={safeTake}");
 
             foreach (var tagId in normalizedTagIds)
             {
                 queryBuilder.Append($"&tagIds={tagId}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedNameQuery))
+            {
+                queryBuilder.Append($"&nameQuery={Uri.EscapeDataString(normalizedNameQuery)}");
             }
 
             var result = await _httpClient.GetFromJsonAsync<PagedResultDTO<ProductCardDTO>>(
@@ -469,9 +477,16 @@ namespace BlazorDemoShop.Services
 
         public async Task<List<OrderDTO>> GetMyOrdersAsync(
             string? token,
+            int? orderId = null,
+            DateTime? createdDate = null,
             CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, "api/orders/mine");
+            var route = BuildOrdersSearchRoute(
+                "api/orders/mine",
+                orderId,
+                createdDate);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, route);
             AppendAuthHeader(request, token);
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -495,9 +510,18 @@ namespace BlazorDemoShop.Services
 
         public async Task<List<OrderDTO>> GetAllOrdersAsync(
             string? token,
+            int? orderId = null,
+            DateTime? createdDate = null,
+            string? userQuery = null,
             CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, "api/orders/all");
+            var route = BuildOrdersSearchRoute(
+                "api/orders/all",
+                orderId,
+                createdDate,
+                userQuery);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, route);
             AppendAuthHeader(request, token);
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -543,6 +567,114 @@ namespace BlazorDemoShop.Services
 
             var statuses = await response.Content.ReadFromJsonAsync<List<OrderStatusDTO>>(cancellationToken: cancellationToken);
             return statuses ?? new List<OrderStatusDTO>();
+        }
+
+        public async Task<SalesByTagReportDTO> GetSalesByTagsReportAsync(
+            DateTime dateFrom,
+            DateTime dateTo,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedFrom = dateFrom.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var normalizedTo = dateTo.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/orders/reports/sales-by-tags?dateFrom={normalizedFrom}&dateTo={normalizedTo}");
+
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для получения отчета по продажам.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var badRequestMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(badRequestMessage)
+                    ? "Некорректный период отчета."
+                    : badRequestMessage);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить отчет по продажам."
+                    : message);
+            }
+
+            var report = await response.Content.ReadFromJsonAsync<SalesByTagReportDTO>(cancellationToken: cancellationToken);
+            if (report is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при загрузке отчета.");
+            }
+
+            return report;
+        }
+
+        public async Task<SalesByTagProductsReportDTO> GetSoldProductsByTagAsync(
+            int tagId,
+            DateTime dateFrom,
+            DateTime dateTo,
+            string? token,
+            CancellationToken cancellationToken = default)
+        {
+            if (tagId <= 0)
+            {
+                throw new InvalidOperationException("Некорректный тег.");
+            }
+
+            var normalizedFrom = dateFrom.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var normalizedTo = dateTo.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/orders/reports/sales-by-tags/{tagId}/products?dateFrom={normalizedFrom}&dateTo={normalizedTo}");
+
+            AppendAuthHeader(request, token);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав для просмотра товаров по тегу.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Тег не найден."
+                    : message);
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Некорректный запрос для отчета по товарам."
+                    : message);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить список товаров по тегу."
+                    : message);
+            }
+
+            var report = await response.Content.ReadFromJsonAsync<SalesByTagProductsReportDTO>(cancellationToken: cancellationToken);
+            if (report is null)
+            {
+                throw new InvalidOperationException("API вернул пустой ответ при загрузке товаров по тегу.");
+            }
+
+            return report;
         }
 
         public async Task<OrderDTO> UpdateOrderStatusAsync(
@@ -602,6 +734,38 @@ namespace BlazorDemoShop.Services
             }
 
             return order;
+        }
+
+        private static string BuildOrdersSearchRoute(
+            string basePath,
+            int? orderId,
+            DateTime? createdDate,
+            string? userQuery = null)
+        {
+            var queryParts = new List<string>();
+
+            if (orderId.HasValue && orderId.Value > 0)
+            {
+                queryParts.Add($"orderId={orderId.Value}");
+            }
+
+            if (createdDate.HasValue)
+            {
+                var dateValue = createdDate.Value.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                queryParts.Add($"createdDate={dateValue}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(userQuery))
+            {
+                queryParts.Add($"userQuery={Uri.EscapeDataString(userQuery.Trim())}");
+            }
+
+            if (queryParts.Count == 0)
+            {
+                return basePath;
+            }
+
+            return $"{basePath}?{string.Join("&", queryParts)}";
         }
 
         private static void AppendAuthHeader(HttpRequestMessage request, string? token)

@@ -33,7 +33,22 @@ namespace BlazorDemoShop.Services
 
         public static bool CanCancelByUser(string? statusTitle)
         {
-            return ResolveKind(statusTitle) == OrderStatusKind.Active;
+            var normalized = statusTitle?.Trim().ToLowerInvariant() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return false;
+            }
+
+            var isActive = normalized.Contains("актив") || normalized.Contains("active");
+            var isAccepted = normalized.Contains("принят") || normalized.Contains("accepted");
+
+            return isActive || isAccepted;
+        }
+
+        public static bool CanEditByAdmin(string? statusTitle)
+        {
+            var kind = ResolveKind(statusTitle);
+            return kind != OrderStatusKind.Completed && kind != OrderStatusKind.Cancelled;
         }
 
         private static OrderStatusKind ResolveKind(string? statusTitle)

@@ -109,7 +109,7 @@
                     @foreach (var item in _order.OrderItems)
                     {
                         <div class="order-item-row">
-                            <span>@GetProductTitle(item)</span>
+                            <NavLink href="@($"/products/{item.ProductId}")">@GetProductTitle(item)</NavLink>
                             <strong>@item.Count x @FormatPrice(item.ProductPrice ?? 0m)</strong>
                         </div>
                     }
