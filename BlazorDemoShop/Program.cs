@@ -28,6 +28,7 @@ namespace BlazorDemoShop
             builder.Services.AddAuthorization();
             builder.Services.AddCascadingAuthenticationState();
 
+
             builder.Services.AddHttpClient<ApiAuthClientService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
@@ -40,6 +41,14 @@ namespace BlazorDemoShop
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
                 client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
             });
+
+            builder.Services.AddHttpClient<BannersService>((serviceProvider, client) =>
+            {
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var baseUrl = configuration["ApiSettings:BaseUrl"];
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+            });
+
 
             var app = builder.Build();
 

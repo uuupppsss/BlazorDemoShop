@@ -1,11 +1,136 @@
 @page "/"
 
+@inject BannersService bannersService
+@inject NavigationManager nav
+
 <PageTitle>Главная</PageTitle>
 
-<section class="page-shell home-hero">
-    <span class="info-chip">Главная страница магазина</span>
+<div class="home-page">
 
+    @if (activeBanners.Any())
+    {
+        <div id="mainBannerCarousel"
+             class="carousel slide"
+             data-bs-ride="carousel"
+             data-bs-interval="4000">
+
+            <!-- Индикаторы -->
+            <div class="carousel-indicators">
+
+                @for (int i = 0; i < activeBanners.Count; i++)
+                {
+                    <button type="button"
+                            data-bs-target="#mainBannerCarousel"
+                            data-bs-slide-to="@i"
+                            class="@(i == 0 ? "active" : "")">
+                    </button>
+                }
+
+            </div>
+
+            <!-- Слайды -->
+            <div class="carousel-inner">
+
+                @for (int i = 0; i < activeBanners.Count; i++)
+                {
+                    var banner = activeBanners[i];
+
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+
+                        <img src="@banner.ImageUrl"
+                             class="d-block w-100 banner-image"
+                             alt="banner" />
+
+                    </div>
+                }
+
+            </div>
+
+            <!-- Кнопка назад -->
+            <button class="carousel-control-prev"
+                    type="button"
+                    data-bs-target="#mainBannerCarousel"
+                    data-bs-slide="prev">
+
+                <span class="carousel-control-prev-icon"></span>
+
+            </button>
+
+            <!-- Кнопка вперед -->
+            <button class="carousel-control-next"
+                    type="button"
+                    data-bs-target="#mainBannerCarousel"
+                    data-bs-slide="next">
+
+                <span class="carousel-control-next-icon"></span>
+
+            </button>
+
+        </div>
+    }
+
+
+</div>
+<!-- ACTION BUTTONS -->
+<div class="home-actions">
+
+    <!-- Каталог -->
     <div class="home-hero-actions">
         <NavLink class="btn btn-primary" href="/products">Перейти в каталог</NavLink>
     </div>
-</section>
+
+    <AuthorizeView Roles="admin">
+        <div class="home-hero-actions">
+            <NavLink class="btn btn-primary" href="/update">Редактировать</NavLink>
+        </div>
+    </AuthorizeView>
+
+</div>
+
+<!-- CONTACTS -->
+<footer class="contacts-section">
+
+        <div class="contacts-grid">
+
+            <div class="contact-item">
+                <h5>Телефон</h5>
+                <p>+7 123 456 789</p>
+            </div>
+
+            <div class="contact-item">
+                <h5>Email</h5>
+                <p>shop@example.com</p>
+            </div>
+
+            <div class="contact-item">
+                <h5>Адрес</h5>
+                <p>г. Владивосток, ул. Какаято, 15</p>
+            </div>
+
+            <div class="contact-item">
+                <h5>Режим работы</h5>
+                <p>Пн–Вс: 10:00 — 22:00</p>
+            </div>
+
+        </div>
+
+
+</footer>
+
+@code {
+
+    private List<Banner> banners = new();
+
+    private List<Banner> activeBanners = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        banners = await bannersService.GetBannersAsync();
+
+        activeBanners = banners
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.Order)
+            .ToList();
+    }
+
+}

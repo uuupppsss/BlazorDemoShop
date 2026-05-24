@@ -1,4 +1,5 @@
 ﻿using ApiDemoShop.Model;
+using LibDemoShop;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -43,6 +44,8 @@ namespace ApiDemoShop.Data
 
         public virtual DbSet<UserRole> UserRoles { get; set; }
 
+        public DbSet<Banner> Banners { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -56,7 +59,7 @@ namespace ApiDemoShop.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.UseCollation("Cyrillic_General_CI_AS");
+            //modelBuilder.UseCollation("Cyrillic_General_CI_AS");
 
             modelBuilder.Entity<BasketItem>(entity =>
             {

@@ -16,16 +16,16 @@ namespace ApiDemoShop.Services
             _logger = logger;
         }
 
-        public async Task SendMessageAsync(string email, string code, CancellationToken cancellationToken = default)
+        public async Task SendMessageAsync(string email, string mes, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
                 throw new ArgumentException("Email не может быть пустым.", nameof(email));
             }
 
-            if (string.IsNullOrWhiteSpace(code))
+            if (string.IsNullOrWhiteSpace(mes))
             {
-                throw new ArgumentException("Код подтверждения не может быть пустым.", nameof(code));
+                throw new ArgumentException("Сообщение не может быть пустым.", nameof(mes));
             }
 
             var host = _configuration["Smtp:Host"];
@@ -47,7 +47,7 @@ namespace ApiDemoShop.Services
                 new MailAddress(email))
             {
                 Subject = "Код подтверждения email",
-                Body = $"Для подтверждения регистрации используйте код: {code}",
+                Body = $"Для подтверждения регистрации используйте код: {mes}",
                 IsBodyHtml = false
             };
 

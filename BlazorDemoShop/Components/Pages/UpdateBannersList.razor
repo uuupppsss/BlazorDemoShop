@@ -1,0 +1,368 @@
+﻿@page "/update"
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@using Microsoft.AspNetCore.Components.Forms
+@inject BannersService bannersService
+
+<PageTitle>Управление баннерами</PageTitle>
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">
+        Управление баннерами
+    </h2>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success">
+            @successMessage
+        </div>
+    }
+
+    <!-- ДОБАВЛЕНИЕ -->
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header">
+            <h5 class="mb-0">
+                Добавить новый баннер
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Изображение
+                </label>
+
+                <InputFile OnChange="OnFileSelected"
+                           class="form-control" />
+
+            </div>
+
+            @if (selectedFile != null)
+            {
+                <div class="mb-3">
+
+                    <p class="mb-1">
+                        <strong>Файл:</strong>
+                        @selectedFile.Name
+                    </p>
+
+                    <p class="mb-0">
+                        <strong>Размер:</strong>
+                        @(selectedFile.Size / 1024) KB
+                    </p>
+
+                </div>
+            }
+
+            <button class="btn btn-success"
+                    @onclick="UploadBanner"
+                    disabled="@(selectedFile == null || banners.Count >= 5)">
+
+                Добавить баннер
+
+            </button>
+
+            @if (banners.Count >= 5)
+            {
+                <div class="text-danger mt-2">
+                    Достигнут максимум: 5 баннеров
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- СПИСОК -->
+    <div class="card shadow-sm">
+
+        <div class="card-header">
+            <h5 class="mb-0">
+                Текущие баннеры
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            @if (isLoading)
+            {
+                <p>Загрузка...</p>
+            }
+            else if (!banners.Any())
+            {
+                <div class="alert alert-info">
+                    Баннеры отсутствуют
+                </div>
+            }
+            else
+            {
+                @foreach (var banner in banners.OrderBy(x => x.Order))
+                {
+                    <div class="border rounded p-3 mb-3">
+
+                        <div class="row align-items-center">
+
+                            <!-- IMAGE -->
+                            <div class="col-md-3">
+
+                                <img src="@banner.ImageUrl"
+                                     class="img-fluid rounded"
+                                     alt="banner" />
+
+                            </div>
+
+                            <!-- INFO -->
+                            <div class="col-md-5">
+
+                                <h5>
+                                    Баннер #@banner.Id
+                                </h5>
+
+                                <p class="mb-1">
+                                    <strong>Позиция:</strong>
+                                    @banner.Order
+                                </p>
+
+                                <p class="mb-2">
+                                    <strong>Создан:</strong>
+                                    @banner.CreatedAt.ToLocalTime()
+                                </p>
+
+                                @if (banner.IsActive)
+                                {
+                                    <span class="badge bg-success">
+                                        Активен
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        Скрыт
+                                    </span>
+                                }
+
+                            </div>
+
+                            <!-- ACTIONS -->
+                            <div class="col-md-4 text-end">
+
+                                @if (banner.IsActive)
+                                {
+                                    <button class="btn btn-warning me-2"
+                                            @onclick="() => ToggleBanner(banner)">
+                                        Скрыть
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-success me-2"
+                                            @onclick="() => ToggleBanner(banner)">
+                                        Показать
+                                    </button>
+                                }
+
+                                <button class="btn btn-danger"
+                                        @onclick="() => OpenDeleteModal(banner)">
+                                    Удалить
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL -->
+@if (bannerToDelete != null)
+{
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Подтверждение удаления
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="CloseDeleteModal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+                    Удалить баннер?
+                </div>
+
+                <div class="modal-footer">
+
+                    <button class="btn btn-secondary"
+                            @onclick="CloseDeleteModal">
+                        Нет
+                    </button>
+
+                    <button class="btn btn-danger"
+                            @onclick="DeleteBanner">
+                        Да
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    private List<Banner> banners = new();
+
+    private IBrowserFile? selectedFile;
+
+    private Banner? bannerToDelete;
+
+    private bool isLoading = true;
+
+    private string? errorMessage;
+
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBanners();
+    }
+
+    private async Task LoadBanners()
+    {
+        isLoading = true;
+
+        banners = await bannersService.GetBannersAsync();
+
+        isLoading = false;
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private async Task UploadBanner()
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+
+            if (selectedFile == null)
+                return;
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            var createdBanner =
+                await bannersService.UploadBannerAsync(selectedFile,accessToken);
+
+            if (createdBanner != null)
+            {
+                banners.Add(createdBanner);
+            }
+
+            selectedFile = null;
+
+            successMessage = "Баннер успешно добавлен";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task ToggleBanner(Banner banner)
+    {
+        try
+        {
+            banner.IsActive = !banner.IsActive;
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            await bannersService.UpdateBannerAsync(banner,accessToken);
+
+            successMessage = "Баннер обновлён";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void OpenDeleteModal(Banner banner)
+    {
+        bannerToDelete = banner;
+    }
+
+    private void CloseDeleteModal()
+    {
+        bannerToDelete = null;
+    }
+
+    private async Task DeleteBanner()
+    {
+        try
+        {
+            errorMessage = null;
+            successMessage = null;
+
+            if (bannerToDelete == null)
+                return;
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            await bannersService.DeleteBannerAsync(
+                bannerToDelete.Id,accessToken);
+
+            banners.Remove(bannerToDelete);
+
+            bannerToDelete = null;
+
+            successMessage = "Баннер удалён";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}
