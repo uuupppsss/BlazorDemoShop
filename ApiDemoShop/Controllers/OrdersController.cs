@@ -223,6 +223,7 @@ namespace ApiDemoShop.Controllers
 
             var order = await _dbContext.Orders
                 .Include(x => x.Status)
+                .Include(x=>x.User)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (order is null)
@@ -262,7 +263,7 @@ namespace ApiDemoShop.Controllers
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
-                //await _emailService.SendMessageAsync(email, $"Заказ {} завершен");
+                await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
 
             }
             else if (request.RecieveDate.HasValue)

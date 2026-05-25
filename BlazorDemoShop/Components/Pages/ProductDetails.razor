@@ -1,6 +1,7 @@
 ﻿@page "/products/{Id:int}"
 @inject ApiProductsClientService ApiProductsClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApiFavoriteService FavoriteService
 @using System.Globalization
 @using BlazorDemoShop.Components.Layout
 
@@ -54,7 +55,14 @@
             </div>
 
             <div class="card-body">
-                <p class="product-card-price mb-2">@FormatPrice(_product.Price)</p>
+                @* <p class="product-card-price mb-2">@FormatPrice(_product.Price)</p> *@
+
+                <ProductPrice
+                HasDiscount="@_product.HasDiscount"
+                OldPrice="@_product.OldPrice"
+                FinalPrice="@_product.FinalPrice"
+                DiscountPercent="@_product.DiscountPercent" />
+
                 <p class="product-availability @(IsOutOfStock ? "product-availability-out" : "product-availability-in") mb-2">
                     @(IsOutOfStock ? "Нет в наличии" : $"В наличии: {_product.Count} шт.")
                 </p>
@@ -87,6 +95,16 @@
                     <span class="buy-button-icon buy-button-cart-icon" aria-hidden="true"></span>
                     <span>@GetBuyButtonTitle()</span>
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ToggleFavorite">
+                    @if (_isFavorite)
+                    {
+                        <i class="bi bi-heart-fill"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-heart"></i>
+                    }
+                </button>
 
                 @if (!string.IsNullOrWhiteSpace(_successMessage))
                 {
@@ -107,7 +125,7 @@
         <AuthorizeView Roles="admin">
             <Authorized>
                 <NavLink class="btn btn-outline-secondary mt-3" href="@($"/products/{_product.Id}/edit")">
-                    Edit product
+                    Редактировать
                 </NavLink>
             </Authorized>
         </AuthorizeView>
@@ -129,6 +147,7 @@
     private int _activeImageIndex;
     private string? _errorMessage;
     private string? _successMessage;
+    private bool _isFavorite=false;
 
     private ProductDTO? _product;
     private List<string> _productImages = new();
@@ -151,6 +170,13 @@
         try
         {
             await LoadProductData();
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.IsInRole("user"))
+            {
+                var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+                _isFavorite = await FavoriteService.IsFavoriteAsync(Id,accessToken);
+            }
+            
 
             if (_product is not null)
             {
@@ -160,6 +186,7 @@
                     _productImages.Add(GetImageUrl(_product.MainImage));
                 }
             }
+            
         }
         catch
         {
@@ -169,6 +196,14 @@
         {
             _isLoading = false;
         }
+    }
+
+     private async Task ToggleFavorite()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        _isFavorite = await FavoriteService
+            .ToggleFavoriteAsync(Id, accessToken);
     }
 
     private async Task LoadProductData()

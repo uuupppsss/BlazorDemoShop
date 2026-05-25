@@ -147,3 +147,136 @@
 }
 
 /**********************************************/
+.admin-sidebar {
+    width: 280px;
+    min-height: 100vh;
+    background: linear-gradient( 180deg, #f6f3ee 0%, #ede7de 100% );
+    border-right: 1px solid #d8cfc3;
+    padding: 24px 18px;
+    box-shadow: 4px 0 20px rgba(60, 40, 30, 0.08);
+    position: sticky;
+    top: 0;
+}
+
+/* Шапка */
+.sidebar-header {
+    margin-bottom: 30px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #d7c9bb;
+}
+
+    .sidebar-header h4 {
+        color: #5a2e2e;
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 0.4px;
+    }
+
+/* Меню */
+.admin-sidebar .nav {
+    gap: 10px;
+}
+
+/* Секция */
+.menu-section {
+    margin-bottom: 18px;
+}
+
+/* Заголовок секции */
+.menu-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #6c4b3d;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(122, 74, 54, 0.06);
+}
+
+    .menu-title i {
+        font-size: 1rem;
+        color: #7b4b3a;
+    }
+
+/* Основные ссылки */
+.admin-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #4e4037;
+    text-decoration: none;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 0.97rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+    /* Иконки */
+    .admin-sidebar .nav-link i {
+        font-size: 1.1rem;
+        min-width: 22px;
+        color: #7d5b4d;
+        transition: 0.25s ease;
+    }
+
+    /* Hover */
+    .admin-sidebar .nav-link:hover {
+        background: #dfe7dc;
+        color: #35523a;
+        transform: translateX(4px);
+    }
+
+        .admin-sidebar .nav-link:hover i {
+            color: #35523a;
+        }
+
+    /* Активная ссылка */
+    .admin-sidebar .nav-link.active {
+        background: linear-gradient( 135deg, #6f8b74, #4f6b56 );
+        color: #35523a;
+        box-shadow: 0 6px 16px rgba(79, 107, 86, 0.25);
+    }
+
+        .admin-sidebar .nav-link.active i {
+            color: #35523a;
+        }
+
+/* Подпункты */
+.admin-sidebar .submenu {
+    margin-left: 12px;
+    padding-left: 18px;
+    font-size: 0.93rem;
+    background: rgba(255,255,255,0.35);
+    color:darkolivegreen;
+}
+
+    .admin-sidebar .submenu:hover {
+        background: rgba(111, 139, 116, 0.15);
+    }
+
+/* Скролл */
+/*.admin-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: #c7b8a7;
+    border-radius: 20px;
+}*/
+
+@media (max-width: 992px) {
+    .admin-sidebar {
+        width: 100%;
+        min-height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid #d8cfc3;
+    }
+}

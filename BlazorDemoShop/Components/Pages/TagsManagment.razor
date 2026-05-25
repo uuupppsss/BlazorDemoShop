@@ -1,0 +1,288 @@
+﻿@page "/admin/tags-management"
+@attribute [Authorize (Roles ="admin")]
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApiTagsService TagsService
+
+<h3 class="mb-4">Управление тегами</h3>
+
+<div class="row">
+
+    <!-- TYPES -->
+
+    <div class="col-md-4">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">Типы тегов</h5>
+            </div>
+
+            <div class="card-body">
+
+                <InputText @bind-Value="_typeTitle"
+                           class="form-control"
+                           placeholder="Название типа" />
+
+                <button class="btn btn-success mt-3 w-100"
+                        @onclick="SaveType">
+                    @(EditingTypeId == null ? "Добавить тип" : "Сохранить")
+                </button>
+
+                <hr />
+
+                @foreach (var type in Types)
+                {
+                    <div class="border rounded p-2 mb-2">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+                                <strong>@type.Title</strong>
+                            </div>
+
+                            <div>
+
+                                <button class="btn btn-sm btn-outline-warning me-1"
+                                        @onclick="() => EditType(type)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                @* <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => DeleteType(type.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button> *@
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- TAGS -->
+
+    <div class="col-md-8">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+                <h5 class="mb-0">Теги</h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-5">
+
+                        <InputText @bind-Value="_tagTitle"
+                                   class="form-control"
+                                   placeholder="Название тега" />
+
+                    </div>
+
+                    <div class="col-md-5">
+
+                        <InputSelect @bind-Value="_selectedTypeId"
+                                     class="form-select">
+
+                            <option value="0">Выберите тип</option>
+
+                            @foreach (var type in Types)
+                            {
+                                <option value="@type.Id">
+                                    @type.Title
+                                </option>
+                            }
+
+                        </InputSelect>
+
+                    </div>
+
+                    <div class="col-md-2">
+
+                        <button class="btn btn-success w-100"
+                                @onclick="SaveTag">
+                            @(EditingTagId == null ? "+" : "OK")
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                @foreach (var group in Tags.GroupBy(x => x.TypeTitle))
+                {
+                    <div class="mb-4">
+
+                        <h5 class="mb-3">
+                            @group.Key
+                        </h5>
+
+                        <div class="d-flex flex-wrap gap-2">
+
+                            @foreach (var tag in group)
+                            {
+                                <div class="border rounded px-3 py-2 d-flex align-items-center">
+
+                                    <span class="me-3">
+                                        @tag.Title
+                                    </span>
+
+                                    <button class="btn btn-sm btn-outline-warning me-1"
+                                            @onclick="() => EditTag(tag)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    @* <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => DeleteTag(tag.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button> *@
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private List<ProductTypeDTO> Types = new();
+
+    private List<TagDTO> Tags = new();
+
+    // TYPE
+
+    private string _typeTitle = string.Empty;
+
+    private int? EditingTypeId;
+
+    // TAG
+
+    private string _tagTitle = string.Empty;
+
+    private int _selectedTypeId;
+
+    private int? EditingTagId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        Types = await TagsService.GetTypes();
+
+        Tags = await TagsService.GetTags();
+    }
+
+    // ================= TYPES =================
+
+    private async Task SaveType()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        var dto = new CreateProductTypeDTO
+        {
+            Title = _typeTitle
+        };
+
+        if (EditingTypeId == null)
+        {
+            await TagsService.CreateType(dto, accessToken);
+        }
+        else
+        {
+            await TagsService.UpdateType(
+                EditingTypeId.Value,
+                dto,
+                accessToken);
+        }
+
+        _typeTitle = string.Empty;
+
+        EditingTypeId = null;
+
+        await Load();
+    }
+
+    private void EditType(ProductTypeDTO type)
+    {
+        EditingTypeId = type.Id;
+
+        _typeTitle = type.Title;
+    }
+
+    private async Task DeleteType(int id)
+    {
+       
+
+        
+    }
+
+    // ================= TAGS =================
+
+    private async Task SaveTag()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        var dto = new TagDTO
+        {
+            Title = _tagTitle,
+            TypeId = _selectedTypeId
+        };
+
+        if (EditingTagId == null)
+        {
+            await TagsService.CreateTag(dto, accessToken);
+        }
+        else
+        {
+            await TagsService.UpdateTag(
+                EditingTagId.Value,
+                dto,
+                accessToken);
+        }
+
+        _tagTitle = string.Empty;
+
+        _selectedTypeId = 0;
+
+        EditingTagId = null;
+
+        await Load();
+    }
+
+    private void EditTag(TagDTO tag)
+    {
+        EditingTagId = tag.Id;
+
+        _tagTitle = tag.Title;
+
+        _selectedTypeId = tag.TypeId;
+    }
+
+    private async Task DeleteTag(int id)
+    {
+       
+    }
+}

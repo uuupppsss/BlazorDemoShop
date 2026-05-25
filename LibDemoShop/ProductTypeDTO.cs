@@ -10,7 +10,7 @@ namespace LibDemoShop
     {
         public int Id { get; set; }
         public string Title { get; set; } = null!;
-        public List<TagDTO>? Tags { get; set; }
+        public List<TagDTO>? Tags { get; set; }= null;
     }
 
     public class CreateProductTypeDTO

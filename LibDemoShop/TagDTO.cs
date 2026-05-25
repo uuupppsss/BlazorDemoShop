@@ -23,7 +23,7 @@ namespace LibDemoShop
     public class UpdateTagDTO
     {
         public int Id { get; set; }
-        public string? Title { get; set; }
-        public int? TypeId { get; set; }
+        public string Title { get; set; }
+        public int TypeId { get; set; }
     }
 }

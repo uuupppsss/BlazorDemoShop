@@ -1,0 +1,94 @@
+﻿@inject PromotionsService PromotionsService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<EditForm Model="_model"
+          OnValidSubmit="Save">
+
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label>Скидка (%)</label>
+
+        <InputNumber class="form-control"
+                     @bind-Value="_model.Discount" />
+    </div>
+
+    <div class="mb-3">
+        <label>Дата начала</label>
+
+        <InputDate class="form-control"
+                   @bind-Value="_model.StartDate" />
+    </div>
+
+    <div class="mb-3">
+        <label>Дата окончания</label>
+
+        <InputDate class="form-control"
+                   @bind-Value="_model.EndDate" />
+    </div>
+
+    <div class="mb-3">
+        <label>ID товара</label>
+
+        <InputNumber class="form-control"
+                     @bind-Value="_model.ProductId" />
+    </div>
+
+    <button class="btn btn-success">
+        Сохранить
+    </button>
+
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public PromotionDto? Promotion { get; set; }
+
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    private CreateUpdatePromotionDto _model = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Promotion == null)
+        {
+            _model = new CreateUpdatePromotionDto
+            {
+                StartDate = DateTime.Now,
+                EndDate = DateTime.Now.AddDays(7)
+            };
+
+            return;
+        }
+
+        _model = new CreateUpdatePromotionDto
+        {
+            Discount = Promotion.Discount,
+            StartDate = Promotion.StartDate,
+            EndDate = Promotion.EndDate,
+            ProductId = Promotion.ProductId
+        };
+    }
+
+    private async Task Save()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        if (Promotion == null)
+        {
+            await PromotionsService.Create(_model, accessToken);
+        }
+        else
+        {
+            await PromotionsService.Update(
+                Promotion.Id,
+                _model,
+                accessToken);
+        }
+
+        await OnSaved.InvokeAsync();
+    }
+}

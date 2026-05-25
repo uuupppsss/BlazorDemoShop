@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ApiDemoShop.Controllers
 {
@@ -65,26 +67,40 @@ namespace ApiDemoShop.Controllers
 
             var totalCount = await productsQuery.CountAsync(cancellationToken);
 
+            var now = DateTime.UtcNow;
+
             var items = await productsQuery
+                .Include(x => x.Promotions)
+                .Include(x => x.ProductImages)
                 .OrderBy(x => x.Id)
                 .Skip(safeSkip)
                 .Take(safeTake)
-                .Select(x => new ProductCardDTO
+                .ToListAsync(cancellationToken);
+
+            var dtoItems = items.Select(product =>
+            {
+                var dto = new ProductCardDTO
                 {
-                    Id = x.Id,
-                    Count = x.Count,
-                    Name = x.Name,
-                    Price = x.Price,
-                    MainImage = x.ProductImages
+                    Id = product.Id,
+                    Count = product.Count,
+                    Name = product.Name,
+                    Price = product.Price,
+
+                    MainImage = product.ProductImages
                         .OrderBy(i => i.Id)
                         .Select(i => i.Image)
                         .FirstOrDefault() ?? FallbackImageUrl
-                })
-                .ToListAsync(cancellationToken);
+                };
+
+                FillDiscountInfo(dto, product);
+
+                return dto;
+
+            }).ToList();
 
             return Ok(new PagedResultDTO<ProductCardDTO>
             {
-                Items = items,
+                Items = dtoItems,
                 TotalCount = totalCount
             });
         }
@@ -411,15 +427,38 @@ namespace ApiDemoShop.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id, CancellationToken cancellationToken = default)
         {
-            var product = await BuildProductDetailsQuery()
+            var productDTO = await BuildProductDetailsQuery()
         .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-            if (product is null)
+            if (productDTO is null)
             {
                 return NotFound();
             }
 
-            product.CanReview = false;
+            var product = await _dbContext.Products.Include(p => p.Promotions)
+               .FirstOrDefaultAsync(p => p.Id == id);
+
+            var promotion = GetActivePromotion(product);
+
+            if (promotion == null)
+            {
+                productDTO.HasDiscount = false;
+
+                productDTO.FinalPrice = (double)product.Price;
+            }
+
+            productDTO.HasDiscount = true;
+
+            productDTO.OldPrice = (double)product.Price;
+
+            productDTO.DiscountPercent = promotion?.Discount;
+
+            productDTO.FinalPrice =
+                (double)(product.Price -
+                product.Price *
+                (decimal)promotion.Discount / 100m);
+
+            productDTO.CanReview = false;
 
             if (User.Identity?.IsAuthenticated == true)
             {
@@ -447,13 +486,13 @@ namespace ApiDemoShop.Controllers
                     // Может оставить отзыв только если:
                     // 1. Покупал товар
                     // 2. Еще не оставлял отзыв
-                    product.CanReview =
+                    productDTO.CanReview =
                         hasPurchased &&
                         !alreadyReviewed;
                 }
             }
 
-            return Ok(product);
+            return Ok(productDTO);
         }
 
         private IQueryable<ProductDTO> BuildProductDetailsQuery()
@@ -486,10 +525,10 @@ namespace ApiDemoShop.Controllers
                         .OrderBy(i => i.Id)
                         .Select(i => i.Image)
                         .FirstOrDefault() ?? FallbackImageUrl,
-                    AverageRating=x.Reviews.Any()
+                    AverageRating = x.Reviews.Any()
                     ? Math.Round(x.Reviews.Average(r => r.Rating), 1)
                     : 0,
-                    ReviewsCount=x.Reviews.Count()
+                    ReviewsCount = x.Reviews.Count()
                 });
         }
 
@@ -514,6 +553,41 @@ namespace ApiDemoShop.Controllers
         private static string? NormalizeDescription(string? description)
         {
             return string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        }
+
+        private Promotion? GetActivePromotion(Product product)
+        {
+            var now = DateTime.Now;
+
+            return product.Promotions
+                .FirstOrDefault(x =>
+                    x.StartDate <= now &&
+                    x.EndDate >= now);
+        }
+
+        private void FillDiscountInfo(ProductCardDTO dto, Product product) 
+        {
+            var promotion = GetActivePromotion(product);
+
+            if (promotion == null)
+            {
+                dto.HasDiscount = false;
+
+                dto.FinalPrice = (double)product.Price;
+
+                return;
+            }
+
+            dto.HasDiscount = true;
+
+            dto.OldPrice = (double)product.Price;
+
+            dto.DiscountPercent = promotion.Discount;
+
+            dto.FinalPrice =
+                (double)(product.Price -
+                product.Price *
+                (decimal)promotion.Discount / 100m);
         }
     }
 }

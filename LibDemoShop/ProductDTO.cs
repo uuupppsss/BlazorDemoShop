@@ -21,6 +21,13 @@ namespace LibDemoShop
         public double AverageRating { get; set; } = 0;
         public int ReviewsCount { get; set; } = 0;
         public bool CanReview { get; set; } = false;
+
+        // АКЦИЯ
+
+        public bool HasDiscount { get; set; } = false;
+        public double? OldPrice { get; set; }
+        public double? FinalPrice { get; set; }
+        public double? DiscountPercent { get; set; }
     }
 
     public class CreateProductDTO

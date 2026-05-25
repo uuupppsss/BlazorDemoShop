@@ -15,22 +15,24 @@
 
         <AuthorizeView>
             <Authorized Context="auth">
-            <div class="sidebar">
-                    <nav class="nav flex-column">
-                        <div class="nav-item px-3">
-                        <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">
-                            <i class="bi bi-house-door"></i>
-                            <span>Главная</span>
-                        </NavLink>
-                        </div>
-                        <div class="nav-item px-3">
-                        <NavLink href="/products" class="nav-link">
-                            <i class="bi bi-grid"></i>
-                            <span>Каталог</span>
-                        </NavLink>
-                        </div>
+            
+                        
                 @if (auth.User.IsInRole("user"))
                 {
+                    <div class="sidebar">
+                        <nav class="nav flex-column">
+                            <div class="nav-item px-3">
+                                <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">
+                                    <i class="bi bi-house-door"></i>
+                                    <span>Главная</span>
+                                </NavLink>
+                            </div>
+                            <div class="nav-item px-3">
+                                <NavLink href="/products" class="nav-link">
+                                    <i class="bi bi-grid"></i>
+                                    <span>Каталог</span>
+                                </NavLink>
+                            </div>
                     <div class="nav-item px-3">
                             <NavLink href="/cart" class="nav-link">
                                 <i class="bi bi-cart3"></i>
@@ -57,10 +59,10 @@
                                 <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @auth.User.Identity?.Name
                             </NavLink>
                             </div>
-                        
-                }
                     </nav>
-            </div>
+            </div>    
+                }
+                    
 
                 @if (auth.User.IsInRole("admin"))
                 {
@@ -77,13 +79,17 @@
                                     <i class="bi bi-box"></i>
                                     <span>Товары</span>
                                 </div>
+                                <NavLink href="/products" class="nav-link submenu">
+                                    <i class="bi bi-grid"></i>
+                                    <span>Каталог</span>
+                                </NavLink>
 
                                 <NavLink href="/admin/products/create" class="nav-link submenu">
                                     <i class="bi bi-plus-circle"></i>
                                     <span>Добавить товар</span>
                                 </NavLink>
 
-                                <NavLink href="/admin/tags" class="nav-link submenu">
+                                <NavLink href="/admin/tags-management" class="nav-link submenu">
                                     <i class="bi bi-tags"></i>
                                     <span>*Теги</span>
                                 </NavLink>
@@ -106,20 +112,30 @@
                                 <span>Баннеры</span>
                             </NavLink>
 
-                            <NavLink href="/admin/reviews" class="nav-link">
+                            @* <NavLink href="/admin/reviews" class="nav-link">
                                 <i class="bi bi-star"></i>
                                 <span>*Отзывы</span>
-                            </NavLink>
+                            </NavLink> *@
 
                             <NavLink href="/admin/reports" class="nav-link">
                                 <i class="bi bi-bar-chart"></i>
                                 <span>Отчеты</span>
                             </NavLink>
 
-                            <NavLink href="/admin/settings" class="nav-link">
+                            <NavLink href="/admin/promotions" class="nav-link">
+                                <span>Акции</span>
+                            </NavLink>
+
+                            @* <NavLink href="/admin/settings" class="nav-link">
                                 <i class="bi bi-gear"></i>
                                 <span>*Настройки</span>
-                            </NavLink>
+                            </NavLink> *@
+
+                            <div class="nav-item px-3">
+                                <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">
+                                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Выйти
+                                </button>
+                            </div>
 
                         </nav>
                     </div>

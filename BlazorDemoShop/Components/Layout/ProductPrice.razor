@@ -1,0 +1,39 @@
+﻿@if (HasDiscount)
+{
+    <div class="product-price-block">
+
+        <div class="old-price">
+            @OldPrice?.ToString("0.00") ₽
+        </div>
+
+        <div class="discount-badge">
+            -@DiscountPercent%
+        </div>
+
+        <div class="new-price">
+            @FinalPrice?.ToString("0.00") ₽
+        </div>
+
+    </div>
+}
+else
+{
+    <div class="normal-price">
+        @FinalPrice?.ToString("0.00") ₽
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public bool HasDiscount { get; set; }
+
+    [Parameter]
+    public double? OldPrice { get; set; }
+
+    [Parameter]
+    public double? FinalPrice { get; set; }
+
+    [Parameter]
+    public double? DiscountPercent { get; set; }
+}

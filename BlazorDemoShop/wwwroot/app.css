@@ -1427,5 +1427,56 @@ code {
         .reviews-toggle.open span:last-child {
             transform: rotate(180deg);
         }
+
+    /*SAVED*/
+    .favorite-btn {
+        border: none;
+        background: transparent;
+        font-size: 1.4rem;
+        color: #8b2e2e;
+        transition: 0.2s;
+    }
+
+        .favorite-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /*Discount*/
+    .product-price-block {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .old-price {
+        text-decoration: line-through;
+        color: #888;
+        font-size: 0.95rem;
+    }
+
+    .discount-badge {
+        background: #b3261e;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .new-price {
+        color: #2d6a4f;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .normal-price {
+        color: #2d6a4f;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
 }
+
+
 

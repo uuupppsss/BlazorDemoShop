@@ -12,8 +12,8 @@ namespace LibDemoShop
         public int Count { get; set; }
         public int ProductId { get; set; }
         public int UserId { get; set; }
-        public int ProductAvailableCount { get; set; }
 
+        public int ProductAvailableCount { get; set; }
         public string? ProductName { get; set; }
         public decimal? ProductPrice { get; set; }
         public string? ProductImage { get; set; }

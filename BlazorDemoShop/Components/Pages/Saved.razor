@@ -1,0 +1,90 @@
+﻿@page "/saved"
+@attribute [Authorize (Roles ="user")]
+@inject ApiFavoriteService FavoriteService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Избранные товары</PageTitle>
+
+<h3 class="mb-4">Избранные товары</h3>
+
+@if (_isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border"></div>
+    </div>
+}
+else if (_products.Count == 0)
+{
+    <div class="alert alert-secondary">
+        У вас пока нет избранных товаров
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var product in _products)
+        {
+            <div class="card product-card">
+
+                    <img src="@product.MainImage"
+                         class="product-card-image"
+                         alt="@product.Name">
+
+                    <div class="card-body product-card-body">
+
+                        <h5>@product.Name</h5>
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <span class="fw-bold fs-5">
+                                @product.Price ₽
+                            </span>
+
+                            <button class="btn btn-outline-danger"
+                                    @onclick="() => Remove(product.Id)">
+                                <i class="bi bi-heart-fill"></i>
+                            </button>
+                        <NavLink class="btn btn-primary btn-sm" href="@($"/products/{product.Id}")">Перейти к товару</NavLink>
+
+                        </div>
+                    </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    private List<ProductCardDTO> _products = new();
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavorites();
+    }
+
+    private async Task LoadFavorites()
+    {
+        _isLoading = true;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        _products = await FavoriteService.GetFavoritesAsync(accessToken);
+
+        _isLoading = false;
+    }
+
+    private async Task Remove(int productId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        await FavoriteService.ToggleFavoriteAsync(productId,accessToken);
+
+        var product = _products
+            .FirstOrDefault(x => x.Id == productId);
+
+        if (product != null)
+            _products.Remove(product);
+    }
+}

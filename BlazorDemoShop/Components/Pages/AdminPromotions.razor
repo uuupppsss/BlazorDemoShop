@@ -1,0 +1,95 @@
+﻿@page "/admin/promotions"
+@using BlazorDemoShop.Components.Layout
+
+@inject PromotionsService PromotionsService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Акции</h3>
+
+<button class="btn btn-primary mb-3"
+        @onclick="OpenCreate">
+    Добавить акцию
+</button>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Товар</th>
+        <th>Скидка</th>
+        <th>Начало</th>
+        <th>Конец</th>
+        <th></th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @foreach (var promotion in _promotions)
+    {
+        <tr>
+            <td>@promotion.Id</td>
+            <td>@promotion.ProductName</td>
+            <td>@promotion.Discount%</td>
+            <td>@promotion.StartDate.ToShortDateString()</td>
+            <td>@promotion.EndDate.ToShortDateString()</td>
+
+            <td>
+                <button class="btn btn-warning btn-sm"
+                        @onclick="() => Edit(promotion)">
+                    Изменить
+                </button>
+
+                <button class="btn btn-danger btn-sm"
+                        @onclick="() => Delete(promotion.Id)">
+                    Удалить
+                </button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<PromotionForm Promotion="_editingPromotion"
+               OnSaved="Load" />
+
+@code {
+
+    private List<PromotionDto> _promotions = [];
+
+    private PromotionDto? _editingPromotion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        _promotions = await PromotionsService.GetAll(accessToken);
+
+        StateHasChanged();
+    }
+
+    private void OpenCreate()
+    {
+        _editingPromotion = null;
+    }
+
+    private void Edit(PromotionDto promotion)
+    {
+        _editingPromotion = promotion;
+    }
+
+    private async Task Delete(int id)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        await PromotionsService.Delete(id, accessToken);
+
+        await Load();
+    }
+}

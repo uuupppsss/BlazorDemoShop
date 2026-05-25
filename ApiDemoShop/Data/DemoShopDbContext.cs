@@ -48,6 +48,8 @@ namespace ApiDemoShop.Data
 
         public DbSet<Review> Reviews { get; set; }
 
+        public DbSet<Promotion> Promotions { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -439,6 +441,26 @@ namespace ApiDemoShop.Data
                     .WithMany(p => p.Reviews)
                     .HasForeignKey(r => r.ProductId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Promotion>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Discount)
+                    .IsRequired();
+
+                entity.Property(x => x.StartDate)
+                    .IsRequired();
+
+                entity.Property(x => x.EndDate)
+                    .IsRequired();
+
+                entity.HasOne(x => x.Product)
+                    .WithMany(x => x.Promotions)
+                    .HasForeignKey(x => x.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
             });
 
             OnModelCreatingPartial(modelBuilder);
