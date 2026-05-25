@@ -4,7 +4,7 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">BlazorDemoShop</a>
+        <a class="navbar-brand" href="">Магазин посуды</a>
     </div>
 </div>
 
@@ -12,54 +12,120 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="products">
-                <span class="bi bi-grid" aria-hidden="true"></span> Товары
-            </NavLink>
-        </div>
 
         <AuthorizeView>
             <Authorized Context="auth">
+            <div class="sidebar">
+                    <nav class="nav flex-column">
+                        <div class="nav-item px-3">
+                        <NavLink href="/" class="nav-link" Match="NavLinkMatch.All">
+                            <i class="bi bi-house-door"></i>
+                            <span>Главная</span>
+                        </NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                        <NavLink href="/products" class="nav-link">
+                            <i class="bi bi-grid"></i>
+                            <span>Каталог</span>
+                        </NavLink>
+                        </div>
                 @if (auth.User.IsInRole("user"))
                 {
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="cart">
-                            <span class="bi bi-cart-fill-nav-menu" aria-hidden="true"></span> Корзина
-                        </NavLink>
-                    </div>
+                            <NavLink href="/cart" class="nav-link">
+                                <i class="bi bi-cart3"></i>
+                                <span>Корзина</span>
+                            </NavLink>
+                            </div>
+
+                            <div class="nav-item px-3">
+                            <NavLink href="/orders" class="nav-link">
+                                <i class="bi bi-box-seam"></i>
+                                <span>Мои заказы</span>
+                            </NavLink>
+                            </div>
+
+                            <div class="nav-item px-3">
+                                <NavLink href="/saved" class="nav-link">
+                                    <i class="bi bi-heart"></i>
+                                    <span>Избранное</span>
+                                </NavLink>
+                            </div>
+
+                            <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="profile">
+                                <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @auth.User.Identity?.Name
+                            </NavLink>
+                            </div>
+                        
                 }
+                    </nav>
+            </div>
 
                 @if (auth.User.IsInRole("admin"))
                 {
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="products/create">
-                            <span class="bi bi-plus-square" aria-hidden="true"></span> Добавить товар
-                        </NavLink>
-                    </div>
+                    <div class="sidebar admin-sidebar">
 
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="admin/orders">
-                            <span class="bi bi-card-checklist" aria-hidden="true"></span> Все заказы
-                        </NavLink>
-                    </div>
+                        <div class="sidebar-header">
+                            <h4>Панель управления</h4>
+                        </div>
 
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="admin/reports">
-                            <span class="bi bi-bar-chart" aria-hidden="true"></span> Отчеты
-                        </NavLink>
+                        <nav class="nav flex-column">
+
+                            <div class="menu-section">
+                                <div class="menu-title">
+                                    <i class="bi bi-box"></i>
+                                    <span>Товары</span>
+                                </div>
+
+                                <NavLink href="/admin/products/create" class="nav-link submenu">
+                                    <i class="bi bi-plus-circle"></i>
+                                    <span>Добавить товар</span>
+                                </NavLink>
+
+                                <NavLink href="/admin/tags" class="nav-link submenu">
+                                    <i class="bi bi-tags"></i>
+                                    <span>*Теги</span>
+                                </NavLink>
+                            </div>
+
+                            <div class="menu-section">
+                                <div class="menu-title">
+                                    <i class="bi bi-cart-check"></i>
+                                    <span>Заказы</span>
+                                </div>
+
+                                <NavLink href="/admin/orders" class="nav-link submenu">
+                                    <i class="bi bi-list-check"></i>
+                                    <span>Все заказы</span>
+                                </NavLink>
+                            </div>
+
+                            <NavLink href="/admin/banners" class="nav-link">
+                                <i class="bi bi-image"></i>
+                                <span>Баннеры</span>
+                            </NavLink>
+
+                            <NavLink href="/admin/reviews" class="nav-link">
+                                <i class="bi bi-star"></i>
+                                <span>*Отзывы</span>
+                            </NavLink>
+
+                            <NavLink href="/admin/reports" class="nav-link">
+                                <i class="bi bi-bar-chart"></i>
+                                <span>Отчеты</span>
+                            </NavLink>
+
+                            <NavLink href="/admin/settings" class="nav-link">
+                                <i class="bi bi-gear"></i>
+                                <span>*Настройки</span>
+                            </NavLink>
+
+                        </nav>
                     </div>
                 }
 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="profile">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @auth.User.Identity?.Name
-                    </NavLink>
-                </div>
+                
 
                 <div class="nav-item px-3">
                     <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">
@@ -68,6 +134,16 @@
                 </div>
             </Authorized>
             <NotAuthorized>
+                    <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Главная
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/products">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Каталог
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="login">
                         <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Войти

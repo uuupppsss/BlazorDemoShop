@@ -4,6 +4,7 @@ using LibDemoShop;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ApiDemoShop.Controllers
 {
@@ -411,11 +412,45 @@ namespace ApiDemoShop.Controllers
         public async Task<ActionResult<ProductDTO>> GetProductById(int id, CancellationToken cancellationToken = default)
         {
             var product = await BuildProductDetailsQuery()
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (product is null)
             {
                 return NotFound();
+            }
+
+            product.CanReview = false;
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                if (userIdClaim != null)
+                {
+                    var userId = int.Parse(userIdClaim.Value);
+
+                    // Пользователь покупал товар
+                    var hasPurchased = await _dbContext.OrderItems
+                        .AnyAsync(oi =>
+                            oi.ProductId == id &&
+                            oi.Order.UserId == userId &&
+                            oi.Order.StatusId == 3,
+                            cancellationToken);
+
+                    // Пользователь уже оставлял отзыв
+                    var alreadyReviewed = await _dbContext.Reviews
+                        .AnyAsync(r =>
+                            r.ProductId == id &&
+                            r.UserId == userId,
+                            cancellationToken);
+
+                    // Может оставить отзыв только если:
+                    // 1. Покупал товар
+                    // 2. Еще не оставлял отзыв
+                    product.CanReview =
+                        hasPurchased &&
+                        !alreadyReviewed;
+                }
             }
 
             return Ok(product);
@@ -450,7 +485,11 @@ namespace ApiDemoShop.Controllers
                     MainImage = x.ProductImages
                         .OrderBy(i => i.Id)
                         .Select(i => i.Image)
-                        .FirstOrDefault() ?? FallbackImageUrl
+                        .FirstOrDefault() ?? FallbackImageUrl,
+                    AverageRating=x.Reviews.Any()
+                    ? Math.Round(x.Reviews.Average(r => r.Rating), 1)
+                    : 0,
+                    ReviewsCount=x.Reviews.Count()
                 });
         }
 

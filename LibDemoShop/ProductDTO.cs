@@ -18,6 +18,9 @@ namespace LibDemoShop
         public List<string> Images { get; set; } = new();
         public List<TagDTO> Tags { get; set; } = new();
         public string? MainImage { get; set; }
+        public double AverageRating { get; set; } = 0;
+        public int ReviewsCount { get; set; } = 0;
+        public bool CanReview { get; set; } = false;
     }
 
     public class CreateProductDTO

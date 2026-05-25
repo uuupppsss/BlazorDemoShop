@@ -1,9 +1,10 @@
-﻿@page "/update"
-@attribute [Authorize]
+﻿@page "/admin/banners"
+@attribute [Authorize(Roles = "admin")]
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
+@using BlazorDemoShop.Components.Layout
 @using Microsoft.AspNetCore.Components.Forms
-@inject BannersService bannersService
+@inject ApiBannersService bannersService
 
 <PageTitle>Управление баннерами</PageTitle>
 
@@ -201,44 +202,14 @@
          tabindex="-1"
          style="background-color: rgba(0,0,0,0.5);">
 
-        <div class="modal-dialog modal-dialog-centered">
-
-            <div class="modal-content">
-
-                <div class="modal-header">
-
-                    <h5 class="modal-title">
-                        Подтверждение удаления
-                    </h5>
-
-                    <button type="button"
-                            class="btn-close"
-                            @onclick="CloseDeleteModal">
-                    </button>
-
-                </div>
-
-                <div class="modal-body">
-                    Удалить баннер?
-                </div>
-
-                <div class="modal-footer">
-
-                    <button class="btn btn-secondary"
-                            @onclick="CloseDeleteModal">
-                        Нет
-                    </button>
-
-                    <button class="btn btn-danger"
-                            @onclick="DeleteBanner">
-                        Да
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
+        <ConfirmDialog
+            IsVisible="@showDeleteModal"
+            Title="Подтверждение удаления"
+            Message="Удалить баннер?"
+            ConfirmText="Удалить"
+            CancelText="Отмена"
+            OnConfirm="DeleteBanner"
+            OnCancel="CloseDeleteModal" />
 
     </div>
 }
@@ -250,6 +221,7 @@
     private IBrowserFile? selectedFile;
 
     private Banner? bannerToDelete;
+    private bool showDeleteModal = false;
 
     private bool isLoading = true;
 
@@ -331,11 +303,13 @@
     private void OpenDeleteModal(Banner banner)
     {
         bannerToDelete = banner;
+        showDeleteModal = true;
     }
 
     private void CloseDeleteModal()
     {
         bannerToDelete = null;
+        showDeleteModal = false;
     }
 
     private async Task DeleteBanner()
@@ -357,8 +331,10 @@
             banners.Remove(bannerToDelete);
 
             bannerToDelete = null;
+            showDeleteModal = false;
 
             successMessage = "Баннер удалён";
+            
         }
         catch (Exception ex)
         {

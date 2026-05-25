@@ -1,6 +1,6 @@
 @page "/"
 
-@inject BannersService bannersService
+@inject ApiBannersService bannersService
 @inject NavigationManager nav
 
 <PageTitle>Главная</PageTitle>
@@ -78,12 +78,6 @@
     <div class="home-hero-actions">
         <NavLink class="btn btn-primary" href="/products">Перейти в каталог</NavLink>
     </div>
-
-    <AuthorizeView Roles="admin">
-        <div class="home-hero-actions">
-            <NavLink class="btn btn-primary" href="/update">Редактировать</NavLink>
-        </div>
-    </AuthorizeView>
 
 </div>
 

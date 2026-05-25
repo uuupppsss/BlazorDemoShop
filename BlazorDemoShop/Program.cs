@@ -42,7 +42,14 @@ namespace BlazorDemoShop
                 client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
             });
 
-            builder.Services.AddHttpClient<BannersService>((serviceProvider, client) =>
+            builder.Services.AddHttpClient<ApiBannersService>((serviceProvider, client) =>
+            {
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var baseUrl = configuration["ApiSettings:BaseUrl"];
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+            });
+
+            builder.Services.AddHttpClient<ApiReviewsService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];

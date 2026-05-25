@@ -1,0 +1,342 @@
+﻿@using LibDemoShop
+
+@inject ApiReviewsService ReviewService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="reviews-section">
+
+    <button class="reviews-toggle"
+            @onclick="ToggleReviews">
+
+        <span>
+            Отзывы (@ReviewsCount)
+        </span>
+
+        <span>
+            @(isOpen ? "▲" : "▼")
+        </span>
+    </button>
+
+    @if (isOpen)
+    {
+        <div class="reviews-content">
+            @if (!string.IsNullOrWhiteSpace(_successMes))
+            {
+                <div class="alert alert-success mb-3" role="alert">
+                    @_successMes
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_errorMes))
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    @_errorMes
+                </div>
+            }
+@*             @if (reviewCreatedSuccessfully)
+            {
+                <div class="review-success">
+                    ✓ Спасибо! Ваш отзыв успешно опубликован
+                </div>
+            } *@
+            @if (CanReview)
+            {
+                <div class="review-form">
+
+                    <h4>Оставить отзыв</h4>
+
+                    <select class="form-select"
+                            @bind="newReview.Rating">
+
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <option value="@i">
+                                @i
+                            </option>
+                        }
+                    </select>
+
+                    <textarea class="form-control mt-3"
+                              rows="4"
+                              placeholder="Ваш отзыв..."
+                              @bind="newReview.Comment">
+                            </textarea>
+
+                    @if (isEditing)
+                    {
+                        <div class="review-form-actions">
+
+                            <button class="btn btn-dark mt-3"
+                                    @onclick="SaveEdit">
+
+                                Сохранить изменения
+                            </button>
+
+                            <button class="btn btn-outline-secondary mt-3"
+                                    @onclick="CancelEdit">
+
+                                Отмена
+                            </button>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <button class="btn btn-dark mt-3"
+                                @onclick="CreateReview">
+
+                            Отправить отзыв
+                        </button>
+                    }
+                </div>
+            }
+
+            <div class="reviews-list">
+
+                @if (!reviews.Any())
+                {
+                    <p>Пока нет отзывов</p>
+                }
+                else
+                {
+                    @foreach (var review in reviews)
+                    {
+                        <div class="review-card">
+
+                            <div class="review-header">
+
+                                <div>
+                                    <div class="review-user">
+                                        @review.UserName
+                                    </div>
+
+                                    <div class="review-date">
+                                        @review.CreatedAt.ToLocalTime()
+                                    </div>
+                                </div>
+
+                                <RatingStars Value="review.Rating" />
+                            </div>
+
+                            <div class="review-text">
+                                @review.Comment
+                            </div>
+
+                            @if (review.UserId ==currentUserId)
+                            {
+                                <div class="review-actions">
+
+                                    <button class="review-action-btn"
+                                            @onclick="() => StartEdit(review)">
+                                        Редактировать
+                                    </button>
+
+                                    <button class="review-delete-btn"
+                                            @onclick="() => DeleteReview(review.Id)">
+                                        Удалить
+                                    </button>
+
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public int ProductId { get; set; }
+
+    [Parameter]
+    public bool CanReview { get; set; }
+
+    [Parameter]
+    public int ReviewsCount { get; set; }
+
+    [Parameter]
+    public EventCallback OnReviewsChanged { get; set; }
+
+    private bool reviewCreatedSuccessfully;
+    private bool isOpen;
+    private int? currentUserId;
+
+    private bool isEditing;
+    private int? editingReviewId;
+
+    private string? _errorMes;
+    private string? _successMes;
+
+    private CreateUpdateReviewDto editReview = new();
+
+    private List<ReviewResponseDto> reviews = new();
+
+    private CreateUpdateReviewDto newReview = new()
+    {
+        Rating = 5
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUserId();
+        _errorMes = null;
+        _successMes = null;
+    }
+
+    private async Task ToggleReviews()
+    {
+        isOpen = !isOpen;
+
+        if (isOpen && !reviews.Any())
+        {
+            reviews = await ReviewService
+                .GetProductReviews(ProductId);
+
+        }
+    }
+
+    private async Task LoadReviewData()
+    {
+        reviews = await ReviewService
+                .GetProductReviews(ProductId);
+        ReviewsCount = reviews.Count;
+        await OnReviewsChanged.InvokeAsync();
+        StateHasChanged();
+    }
+
+    private async Task CreateReview()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        var success = await ReviewService
+            .CreateReview(ProductId, newReview, accessToken);
+
+        if (!success)
+        {
+            await ShowError("Что то пошло не так");
+            return;
+        }
+        reviewCreatedSuccessfully=true;
+        await ShowSuccess("Отзыв создан успешно");
+        CanReview = false;
+        newReview = new CreateUpdateReviewDto()
+        {
+            Rating = 5
+        };
+
+        await LoadReviewData();
+    }
+
+    private void StartEdit(ReviewResponseDto review)
+    {
+        isEditing = true;
+        CanReview = true;
+        editingReviewId = review.Id;
+
+        newReview = new CreateUpdateReviewDto
+        {
+            Rating = review.Rating,
+            Comment = review.Comment
+        };
+    }
+
+    private async Task DeleteReview(int reviewId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return;
+
+        var success = await ReviewService.DeleteReview(reviewId, accessToken);
+        if (!success)
+        {
+            await ShowError("Что то пошло не так");
+            return;
+        }
+
+        await LoadReviewData();
+        await ShowSuccess("Отзыв удален успешно");
+    }
+
+    private async Task SaveEdit()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return;
+
+        var success = await ReviewService.UpdateReview(editingReviewId.Value, newReview, accessToken);
+
+        if (!success)
+        {
+            await ShowError("Что то пошло не так");
+            return;
+        }
+
+        ResetReviewForm();
+
+        await LoadReviewData();
+        CanReview = false;
+        await ShowSuccess("Отзыв обновлен успешно");
+    }
+    private void CancelEdit()
+    {
+        ResetReviewForm();
+        CanReview = false;
+    }
+
+    private void ResetReviewForm()
+    {
+        isEditing = false;
+
+        editingReviewId = null;
+
+        newReview = new CreateUpdateReviewDto
+        {
+            Rating = 5
+        };
+    }
+
+    private async Task GetUserId()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+            return;
+
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            return;
+
+        currentUserId = int.Parse(userIdClaim.Value);
+    }
+
+    private async Task ShowSuccess(string message)
+    {
+        _successMes = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _successMes = null;
+        StateHasChanged();
+    }
+
+    private async Task ShowError(string message)
+    {
+        _errorMes = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _errorMes = null;
+        StateHasChanged();
+    }
+}

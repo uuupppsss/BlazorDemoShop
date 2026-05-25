@@ -7,12 +7,12 @@ using static System.Net.WebRequestMethods;
 
 namespace BlazorDemoShop.Services
 {
-    public class BannersService
+    public class ApiBannersService
     {
         private readonly HttpClient _httpClient;
 
 
-        public BannersService(HttpClient httpClient)
+        public ApiBannersService(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }

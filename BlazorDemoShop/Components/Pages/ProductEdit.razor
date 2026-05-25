@@ -242,7 +242,7 @@
 
     private async Task LoadProductAsync()
     {
-        var product = await ApiProductsClient.GetProductByIdAsync(Id);
+        var product = await ApiProductsClient.GetProductByIdAsync(Id,string.Empty);
 
         if (product is null)
         {

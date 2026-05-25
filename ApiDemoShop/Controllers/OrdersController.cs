@@ -1,5 +1,6 @@
 using ApiDemoShop.Data;
 using ApiDemoShop.Model;
+using ApiDemoShop.Services;
 using LibDemoShop;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,14 @@ namespace ApiDemoShop.Controllers
         private const string CancelledStatusTitle = "Отменен";
         private const string LegacyAcceptedStatusTitle = "Принят";
 
+        private readonly EmailService _emailService;
+
         private readonly DemoShopDbContext _dbContext;
 
-        public OrdersController(DemoShopDbContext dbContext)
+        public OrdersController(DemoShopDbContext dbContext, EmailService emailService)
         {
             _dbContext = dbContext;
+            _emailService = emailService;
         }
 
         [HttpPost]
@@ -258,6 +262,8 @@ namespace ApiDemoShop.Controllers
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
+                //await _emailService.SendMessageAsync(email, $"Заказ {} завершен");
+
             }
             else if (request.RecieveDate.HasValue)
             {
@@ -726,9 +732,9 @@ namespace ApiDemoShop.Controllers
 
         private enum OrderStatusKind
         {
-            Active = 1,
-            Completed = 2,
-            Cancelled = 3
+            Active = 2,
+            Completed = 3,
+            Cancelled = 4
         }
     }
 }

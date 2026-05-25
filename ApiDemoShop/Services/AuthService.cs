@@ -337,7 +337,7 @@ namespace ApiDemoShop.Services
             }
 
             await _context.SaveChangesAsync();
-            await _emailService.SendMessageAsync(user.Email, code);
+            await _emailService.SendMessageAsync(user.Email, $"Код подтверждения - {code}");
         }
     }
 }

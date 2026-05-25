@@ -14,5 +14,6 @@
         public virtual ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
         public virtual ICollection<ProductTag> ProductTags { get; set; } = new List<ProductTag>();
         public virtual ICollection<SavedProduct> SavedProducts { get; set; } = new List<SavedProduct>();
+        public virtual ICollection<Review> Reviews { get; set; }= new List<Review>();
     }
 }

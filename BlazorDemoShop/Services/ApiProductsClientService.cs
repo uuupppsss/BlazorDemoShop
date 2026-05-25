@@ -198,17 +198,35 @@ namespace BlazorDemoShop.Services
             return updatedProduct;
         }
 
-        public async Task<ProductDTO?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<ProductDTO?> GetProductByIdAsync(int id, string? token, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.GetAsync($"api/products/{id}", cancellationToken);
+            //using var response = await _httpClient.GetAsync($"api/products/{id}", cancellationToken);
 
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            //if (response.StatusCode == HttpStatusCode.NotFound)
+            //{
+            //    return null;
+            //}
+
+            //response.EnsureSuccessStatusCode();
+            //return await response.Content.ReadFromJsonAsync<ProductDTO>(cancellationToken: cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/products/{id}");
+            if (token != string.Empty)
             {
-                return null;
+                AppendAuthHeader(request, token);
             }
 
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<ProductDTO>(cancellationToken: cancellationToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось загрузить карточку товара."
+                    : message);
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ProductDTO>(cancellationToken: cancellationToken);
+            return result;
         }
 
         public async Task<List<BasketItemDTO>> GetBasketItemsAsync(string? token, CancellationToken cancellationToken = default)

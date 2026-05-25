@@ -2,6 +2,7 @@
 @inject ApiProductsClientService ApiProductsClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @using System.Globalization
+@using BlazorDemoShop.Components.Layout
 
 <PageTitle>Товар</PageTitle>
 
@@ -59,6 +60,21 @@
                 </p>
                 <p class="mb-2">@GetDescription(_product.Description)</p>
                 <p class="text-muted mb-4">Купили: @_product.TimeBought раз</p>
+                <div class="rating-stars">
+                    <div class="product-rating">
+                        <RatingStars Value="_product.AverageRating" />
+
+                        <span>
+                            @_product.AverageRating
+                            (@_product.ReviewsCount)
+                        </span>
+                    </div>
+                    <ProductReviews
+                    ProductId="_product.Id"
+                    CanReview="_product.CanReview"
+                    ReviewsCount="_product.ReviewsCount"
+                    OnReviewsChanged="ReloadProduct"/>
+                </div>
                 <NavLink class="btn btn-primary" href="/products">Назад к каталогу</NavLink>
             </div>
         </div>
@@ -72,17 +88,17 @@
                     <span>@GetBuyButtonTitle()</span>
                 </button>
 
-                @if (!string.IsNullOrWhiteSpace(_basketSuccessMessage))
+                @if (!string.IsNullOrWhiteSpace(_successMessage))
                 {
                     <div class="alert alert-success mt-3 mb-0" role="alert">
-                        @_basketSuccessMessage
+                        @_successMessage
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(_basketErrorMessage))
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <div class="alert alert-danger mt-3 mb-0" role="alert">
-                        @_basketErrorMessage
+                        @_errorMessage
                     </div>
                 }
             </Authorized>
@@ -99,18 +115,21 @@
 </section>
 
 @code {
+
     private const string PlaceholderImage = "https://placehold.co/960x640/efe4d4/5f4638?text=No+Image";
     private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     [Parameter]
     public int Id { get; set; }
 
+
+
     private bool _isLoading = true;
     private bool _isAddingToBasket;
     private int _activeImageIndex;
     private string? _errorMessage;
-    private string? _basketErrorMessage;
-    private string? _basketSuccessMessage;
+    private string? _successMessage;
+
     private ProductDTO? _product;
     private List<string> _productImages = new();
     private bool IsOutOfStock => _product is null || _product.Count <= 0;
@@ -124,15 +143,14 @@
     {
         _isLoading = true;
         _errorMessage = null;
-        _basketErrorMessage = null;
-        _basketSuccessMessage = null;
+        _successMessage = null;
         _product = null;
         _productImages = new List<string>();
         _activeImageIndex = 0;
 
         try
         {
-            _product = await ApiProductsClient.GetProductByIdAsync(Id);
+            await LoadProductData();
 
             if (_product is not null)
             {
@@ -151,6 +169,18 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task LoadProductData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = string.Empty;
+        if (authState.User.IsInRole("user"))
+        {
+            accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        }
+
+        _product = await ApiProductsClient.GetProductByIdAsync(Id,accessToken);
     }
 
     private void ShowPreviousImage()
@@ -181,8 +211,8 @@
         }
 
         _isAddingToBasket = true;
-        _basketErrorMessage = null;
-        _basketSuccessMessage = null;
+        _errorMessage = null;
+        _successMessage = null;
 
         try
         {
@@ -191,16 +221,16 @@
 
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _basketErrorMessage = "Не удалось определить токен авторизации.";
+                _errorMessage = "Не удалось определить токен авторизации.";
                 return;
             }
 
             await ApiProductsClient.AddToBasketAsync(_product.Id, 1, accessToken);
-            _basketSuccessMessage = "Товар добавлен в корзину.";
+            _successMessage = "Товар добавлен в корзину.";
         }
         catch (Exception ex)
         {
-            _basketErrorMessage = ex.Message;
+            _errorMessage = ex.Message;
         }
         finally
         {
@@ -241,5 +271,10 @@
         }
 
         return _isAddingToBasket ? "Добавляем..." : "Добавить в корзину";
+    }
+
+    private async Task ReloadProduct()
+    {
+        await LoadProductData();
     }
 }

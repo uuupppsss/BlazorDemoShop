@@ -15,5 +15,6 @@ namespace ApiDemoShop.Model
         public virtual ICollection<EmailVerificationCode> EmailVerificationCodes { get; set; } = new List<EmailVerificationCode>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<SavedProduct> SavedProducts { get; set; } = new List<SavedProduct>();
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }
