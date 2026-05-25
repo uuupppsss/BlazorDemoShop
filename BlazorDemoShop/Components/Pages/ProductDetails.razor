@@ -58,10 +58,10 @@
                 @* <p class="product-card-price mb-2">@FormatPrice(_product.Price)</p> *@
 
                 <ProductPrice
-                HasDiscount="@_product.HasDiscount"
-                OldPrice="@_product.OldPrice"
-                FinalPrice="@_product.FinalPrice"
-                DiscountPercent="@_product.DiscountPercent" />
+                HasDiscount="@_product.Promo.HasDiscount"
+                OldPrice="@_product.Promo.OldPrice"
+                FinalPrice="@_product.Promo.FinalPrice"
+                DiscountPercent="@_product.Promo.DiscountPercent" />
 
                 <p class="product-availability @(IsOutOfStock ? "product-availability-out" : "product-availability-in") mb-2">
                     @(IsOutOfStock ? "Нет в наличии" : $"В наличии: {_product.Count} шт.")

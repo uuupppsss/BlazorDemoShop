@@ -1,5 +1,6 @@
 using ApiDemoShop.Data;
 using ApiDemoShop.Model;
+using ApiDemoShop.Services;
 using LibDemoShop;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -92,7 +93,7 @@ namespace ApiDemoShop.Controllers
                         .FirstOrDefault() ?? FallbackImageUrl
                 };
 
-                FillDiscountInfo(dto, product);
+                dto.Promo= PromotionHelper.FillDiscountInfo(product);
 
                 return dto;
 
@@ -438,25 +439,7 @@ namespace ApiDemoShop.Controllers
             var product = await _dbContext.Products.Include(p => p.Promotions)
                .FirstOrDefaultAsync(p => p.Id == id);
 
-            var promotion = GetActivePromotion(product);
-
-            if (promotion == null)
-            {
-                productDTO.HasDiscount = false;
-
-                productDTO.FinalPrice = (double)product.Price;
-            }
-
-            productDTO.HasDiscount = true;
-
-            productDTO.OldPrice = (double)product.Price;
-
-            productDTO.DiscountPercent = promotion?.Discount;
-
-            productDTO.FinalPrice =
-                (double)(product.Price -
-                product.Price *
-                (decimal)promotion.Discount / 100m);
+            productDTO.Promo=PromotionHelper.FillDiscountInfo(product);
 
             productDTO.CanReview = false;
 
@@ -555,39 +538,6 @@ namespace ApiDemoShop.Controllers
             return string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         }
 
-        private Promotion? GetActivePromotion(Product product)
-        {
-            var now = DateTime.Now;
-
-            return product.Promotions
-                .FirstOrDefault(x =>
-                    x.StartDate <= now &&
-                    x.EndDate >= now);
-        }
-
-        private void FillDiscountInfo(ProductCardDTO dto, Product product) 
-        {
-            var promotion = GetActivePromotion(product);
-
-            if (promotion == null)
-            {
-                dto.HasDiscount = false;
-
-                dto.FinalPrice = (double)product.Price;
-
-                return;
-            }
-
-            dto.HasDiscount = true;
-
-            dto.OldPrice = (double)product.Price;
-
-            dto.DiscountPercent = promotion.Discount;
-
-            dto.FinalPrice =
-                (double)(product.Price -
-                product.Price *
-                (decimal)promotion.Discount / 100m);
-        }
+       
     }
 }

@@ -9,10 +9,6 @@ namespace LibDemoShop
         public string MainImage { get; set; } = string.Empty;
 
         // ¿ ÷»ﬂ
-
-        public bool HasDiscount { get; set; } = false;
-        public double? OldPrice { get; set; }
-        public double? FinalPrice { get; set; }
-        public double? DiscountPercent { get; set; }
+        public PromoInfo? Promo { get; set; } = new PromoInfo();
     }
 }

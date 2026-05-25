@@ -111,11 +111,10 @@
                     <div class="card-body product-card-body">
                         <h5 class="card-title">@product.Name</h5>
                         @* <p class="product-card-price">@FormatPrice(product.Price)</p> *@
-                        <ProductPrice
-                        HasDiscount="@product.HasDiscount"
-                        OldPrice="@product.OldPrice"
-                        FinalPrice="@product.FinalPrice"
-                        DiscountPercent="@product.DiscountPercent" />
+                        <ProductPrice HasDiscount="@product.Promo.HasDiscount"
+                                      OldPrice="@product.Promo.OldPrice"
+                                      FinalPrice="@product.Promo.FinalPrice"
+                                      DiscountPercent="@product.Promo.DiscountPercent" />
                         <p class="product-availability @(product.Count <= 0 ? "product-availability-out" : "product-availability-in")">
                             @(product.Count <= 0 ? "Нет в наличии" : $"В наличии: {product.Count} шт.")
                         </p>
