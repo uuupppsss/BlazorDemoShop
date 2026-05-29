@@ -1,5 +1,6 @@
 ﻿@using LibDemoShop
 
+
 @inject ApiReviewsService ReviewService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -33,12 +34,6 @@
                     @_errorMes
                 </div>
             }
-@*             @if (reviewCreatedSuccessfully)
-            {
-                <div class="review-success">
-                    ✓ Спасибо! Ваш отзыв успешно опубликован
-                </div>
-            } *@
             @if (CanReview)
             {
                 <div class="review-form">

@@ -38,5 +38,6 @@ namespace LibDemoShop
         public double? OldPrice { get; set; }
         public double? FinalPrice { get; set; }
         public double? DiscountPercent { get; set; }
+        public DateTime? EndDate { get; set; } = null;
     }
 }

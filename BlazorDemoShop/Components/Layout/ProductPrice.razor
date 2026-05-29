@@ -1,17 +1,37 @@
 ﻿@if (HasDiscount)
 {
-    <div class="product-price-block">
+    <div class="discount-price-card">
 
-        <div class="old-price">
-            @OldPrice?.ToString("0.00") ₽
+        <div class="discount-header">
+            АКЦИЯ
         </div>
 
-        <div class="discount-badge">
-            -@DiscountPercent%
-        </div>
+        <div class="discount-main">
 
-        <div class="new-price">
-            @FinalPrice?.ToString("0.00") ₽
+            <div class="new-price">
+                @FinalPrice?.ToString("0.00") ₽
+            </div>
+
+            <div class="discount-row">
+
+                <div class="old-price">
+                    @OldPrice?.ToString("0.00") ₽
+                </div>
+
+                <div class="discount-badge">
+                    -@DiscountPercent%
+                </div>
+
+            </div>
+
+            @if (EndDate != null)
+            {
+                <div class="discount-end-date">
+                    Акция действует до
+                    @EndDate?.ToString("dd.MM.yyyy")
+                </div>
+            }
+
         </div>
 
     </div>
@@ -36,4 +56,7 @@ else
 
     [Parameter]
     public double? DiscountPercent { get; set; }
+
+    [Parameter]
+    public DateTime? EndDate { get; set; }
 }

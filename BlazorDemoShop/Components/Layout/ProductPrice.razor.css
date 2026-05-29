@@ -1,0 +1,158 @@
+﻿.discount-price-card {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+
+    padding: 12px 14px;
+
+    border-radius: 16px;
+
+    background: linear-gradient(
+        135deg,
+        #fff5f5 0%,
+        #ffe5e5 100%
+    );
+
+    border: 2px solid #ff4d4f;
+
+    box-shadow:
+        0 6px 18px rgba(255, 77, 79, 0.18);
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.discount-price-card::before {
+    content: '';
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 4px;
+
+    background: linear-gradient(
+        90deg,
+        #ff1f1f,
+        #ff6b6b
+    );
+}
+
+.discount-header {
+    color: white;
+
+    background: #ff1f1f;
+
+    width: fit-content;
+
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    font-size: 0.72rem;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+    box-shadow:
+        0 4px 10px rgba(255, 31, 31, 0.25);
+}
+
+.discount-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.new-price {
+    color: #d90429;
+
+    font-size: 1.8rem;
+
+    font-weight: 900;
+
+    line-height: 1;
+
+    text-shadow:
+        0 2px 8px rgba(217, 4, 41, 0.18);
+}
+
+.discount-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.old-price {
+    color: #8d8d8d;
+
+    font-size: 1rem;
+
+    text-decoration: line-through;
+
+    font-weight: 500;
+}
+
+.discount-badge {
+    background: linear-gradient(
+        135deg,
+        #ff1f1f 0%,
+        #d90429 100%
+    );
+
+    color: white;
+
+    padding: 5px 12px;
+
+    border-radius: 999px;
+
+    font-size: 0.95rem;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 4px 10px rgba(217, 4, 41, 0.25);
+}
+
+.discount-end-date {
+    margin-top: 4px;
+
+    color: #b02a37;
+
+    font-size: 0.82rem;
+
+    font-weight: 600;
+}
+
+.normal-price {
+    color: #222;
+
+    font-size: 1.5rem;
+
+    font-weight: 800;
+}
+
+    .discount-badge {
+    animation: pulseDiscount 1.5s infinite;
+}
+
+@keyframes pulseDiscount {
+
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

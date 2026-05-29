@@ -61,7 +61,8 @@
                 HasDiscount="@_product.Promo.HasDiscount"
                 OldPrice="@_product.Promo.OldPrice"
                 FinalPrice="@_product.Promo.FinalPrice"
-                DiscountPercent="@_product.Promo.DiscountPercent" />
+                DiscountPercent="@_product.Promo.DiscountPercent"
+                EndDate="@_product.Promo.EndDate"/>
 
                 <p class="product-availability @(IsOutOfStock ? "product-availability-out" : "product-availability-in") mb-2">
                     @(IsOutOfStock ? "Нет в наличии" : $"В наличии: {_product.Count} шт.")
@@ -77,12 +78,12 @@
                             (@_product.ReviewsCount)
                         </span>
                     </div>
-                    <ProductReviews
+                </div>
+                <ProductReviews
                     ProductId="_product.Id"
                     CanReview="_product.CanReview"
                     ReviewsCount="_product.ReviewsCount"
                     OnReviewsChanged="ReloadProduct"/>
-                </div>
                 <NavLink class="btn btn-primary" href="/products">Назад к каталогу</NavLink>
             </div>
         </div>

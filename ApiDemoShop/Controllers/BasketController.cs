@@ -1,5 +1,6 @@
 using ApiDemoShop.Data;
 using ApiDemoShop.Model;
+using ApiDemoShop.Services;
 using LibDemoShop;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -86,7 +87,7 @@ namespace ApiDemoShop.Controllers
                 basketItem.Count += safeCount;
             }
 
-            product.Count -= safeCount;
+            //product.Count -= safeCount;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -139,11 +140,11 @@ namespace ApiDemoShop.Controllers
                     return BadRequest("Товара недостаточно на складе.");
                 }
 
-                basketItem.Product.Count -= delta;
+               // basketItem.Product.Count -= delta;
             }
             else if (delta < 0)
             {
-                basketItem.Product.Count += -delta;
+                //basketItem.Product.Count += -delta;
             }
 
             basketItem.Count = request.Count;
@@ -190,6 +191,8 @@ namespace ApiDemoShop.Controllers
             return _dbContext.BasketItems
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .Include(x => x.Product)
+                .Include(x=>x.Product.Promotions)
                 .OrderBy(x => x.Id)
                 .Select(x => new BasketItemDTO
                 {
@@ -199,7 +202,7 @@ namespace ApiDemoShop.Controllers
                     UserId = x.UserId,
                     ProductAvailableCount = x.Product.Count,
                     ProductName = x.Product.Name,
-                    ProductPrice = x.Product.Price,
+                    ProductPrice = PromotionHelper.GetFinalPrice(x.Product),
                     ProductImage = x.Product.ProductImages
                         .OrderBy(i => i.Id)
                         .Select(i => i.Image)

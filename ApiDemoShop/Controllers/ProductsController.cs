@@ -456,7 +456,8 @@ namespace ApiDemoShop.Controllers
                         .AnyAsync(oi =>
                             oi.ProductId == id &&
                             oi.Order.UserId == userId &&
-                            oi.Order.StatusId == 2,
+                            //oi.Order.StatusId == 2,
+                            oi.Order.StatusId == 3,
                             cancellationToken);
 
                     // Пользователь уже оставлял отзыв

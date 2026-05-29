@@ -153,15 +153,6 @@ a:hover,
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-/*.form-control::placeholder {
-    color: color-mix(in srgb, var(--brown-muted) 62%, #fff);
-}*/
-
-.form-control:hover,
-/*.form-select:hover {
-    border-color: color-mix(in srgb, var(--terracotta) 35%, var(--border));
-}*/
-
 .alert {
     border: 1px solid;
     border-radius: var(--radius-l);
@@ -941,7 +932,6 @@ a:hover,
     border-radius: 12px;
     object-fit: cover;
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(239, 228, 212, 0.45));
-    /*border: 1px solid color-mix(in srgb, var(--border) 80%, #fff);*/
 }
 
 .image-remove-button {
@@ -967,7 +957,6 @@ a:hover,
     margin-top: 0.9rem;
     border-radius: 999px;
     border: 1px solid var(--sage);
-    /*background: color-mix(in srgb, var(--sage) 12%, #fff);*/
     color: var(--sage-deep);
     padding: 0.52rem 1rem;
     font-weight: 600;
@@ -1037,14 +1026,10 @@ a:hover,
 
 code {
     color: var(--terracotta-deep);
-    /*background-color: color-mix(in srgb, var(--beige) 58%, #fff);*/
     border-radius: 8px;
     padding: 0.1rem 0.35rem;
 }
 
-.valid.modified:not([type=checkbox]) {
-    /*outline: 1px solid color-mix(in srgb, var(--success) 74%, #fff);*/
-}
 
 .invalid {
     outline: 1px solid var(--danger);
@@ -1263,170 +1248,8 @@ code {
             opacity: 0.85;
         }
 
-    /*Rating Stars*/
-    .rating-stars {
-        display: flex;
-        gap: 2px;
-        font-size: 22px;
-    }
 
-    .star {
-        color: lightgray;
-    }
-
-        .star.filled {
-            color: orange;
-        }
-
-    /*Œ“«€¬€€€€*/
-    .reviews-section {
-        margin-top: 40px;
-    }
-
-    .reviews-toggle {
-        width: 100%;
-        border: none;
-        border-radius: 18px;
-        padding: 18px 22px;
-        background: #ede7dc;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 18px;
-        font-weight: 600;
-        color: #4a3f39;
-        transition: 0.2s;
-    }
-
-        .reviews-toggle:hover {
-            background: #e2d8c8;
-        }
-
-    .reviews-content {
-        margin-top: 20px;
-    }
-
-    .review-form {
-        background: #f7f4ef;
-        border-radius: 18px;
-        padding: 20px;
-        margin-bottom: 24px;
-    }
-
-    .reviews-list {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-    }
-
-    .review-card {
-        background: #f7f4ef;
-        border: 1px solid #ddd4c7;
-        border-radius: 18px;
-        padding: 18px;
-    }
-
-    .review-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 14px;
-    }
-
-    .review-user {
-        font-weight: 600;
-        font-size: 16px;
-        color: #4d3b34;
-    }
-
-    .review-date {
-        font-size: 13px;
-        color: #7d746b;
-    }
-
-    .review-text {
-        line-height: 1.6;
-        color: #3c3835;
-    }
-
-    .purchased-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 14px;
-        border-radius: 999px;
-        background: #d8e7d3;
-        color: #3f5b41;
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 18px;
-    }
-
-    .review-warning {
-        margin-bottom: 18px;
-        color: #7b6d61;
-    }
-
-    .purchased-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: #d9ead3;
-        color: #3d5a40;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .reviews-toggle {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 24px;
-        border: none;
-        border-radius: 22px;
-        background: linear-gradient( 135deg, #ede6dc 0%, #e4d8cc 100% );
-        color: #4b3b34;
-        font-size: 18px;
-        font-weight: 600;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.35);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        cursor: pointer;
-        margin-top: 24px;
-    }
-
-        .reviews-toggle:hover {
-            transform: translateY(-2px);
-            background: linear-gradient( 135deg, #e7ddd1 0%, #dccdbf 100% );
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-
-        .reviews-toggle:active {
-            transform: scale(0.995);
-        }
-
-        .reviews-toggle span:first-child {
-            letter-spacing: 0.2px;
-        }
-
-        .reviews-toggle span:last-child {
-            width: 34px;
-            height: 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.45);
-            font-size: 14px;
-            transition: transform 0.25s ease, background 0.2s ease;
-        }
-
-        .reviews-toggle:hover span:last-child {
-            background: rgba(255,255,255,0.65);
-        }
-
-        .reviews-toggle.open span:last-child {
-            transform: rotate(180deg);
-        }
+  
 
     /*SAVED*/
     .favorite-btn {
@@ -1441,40 +1264,8 @@ code {
             transform: scale(1.1);
         }
 
-        /*Discount*/
-    .product-price-block {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
+   
 
-    .old-price {
-        text-decoration: line-through;
-        color: #888;
-        font-size: 0.95rem;
-    }
-
-    .discount-badge {
-        background: #b3261e;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .new-price {
-        color: #2d6a4f;
-        font-size: 1.2rem;
-        font-weight: 700;
-    }
-
-    .normal-price {
-        color: #2d6a4f;
-        font-size: 1.2rem;
-        font-weight: 700;
-    }
 
 }
 

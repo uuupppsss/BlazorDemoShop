@@ -41,7 +41,6 @@ namespace ApiDemoShop.Controllers
 
             var basketItems = await _dbContext.BasketItems
                 .Where(x => x.UserId == userId)
-                .Include(x => x.Product)
                 .ToListAsync(cancellationToken);
 
             if (basketItems.Count == 0)
@@ -58,7 +57,6 @@ namespace ApiDemoShop.Controllers
             var order = new Order
             {
                 CreateDate = DateTime.Now,
-                FullCost = basketItems.Sum(x => x.Product.Price * x.Count),
                 StatusId = activeStatus.Id,
                 UserId = userId
             };
@@ -66,15 +64,26 @@ namespace ApiDemoShop.Controllers
             _dbContext.Orders.Add(order);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var orderItems = basketItems.Select(x => new OrderItem
-            {
-                Count = x.Count,
-                OrdeId = order.Id,
-                ProductId = x.ProductId
-            });
+            var orderItems = _dbContext.BasketItems.Where(i=>i.UserId==userId)
+                .Include(i=>i.Product)
+                .Include(i=>i.Product.Promotions)
+                .Select(x => new OrderItem
+                    {
+                        Count = x.Count,
+                        OrdeId = order.Id,
+                        ProductId = x.ProductId,
+                        Price=PromotionHelper.GetFinalPrice(x.Product)
+                
+                    });
 
             _dbContext.OrderItems.AddRange(orderItems);
             _dbContext.BasketItems.RemoveRange(basketItems);
+
+            foreach(var oI in orderItems)
+            {
+                var product=await _dbContext.Products.FirstOrDefaultAsync(p=>p.Id==oI.ProductId);
+                product.Count-=oI.Count;
+            }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -273,6 +282,17 @@ namespace ApiDemoShop.Controllers
             else
             {
                 order.RecieveDate = null;
+            }
+
+            if (targetKind == OrderStatusKind.Cancelled)
+            {
+                var items = _dbContext.OrderItems.Where(i => i.OrdeId == id);
+
+                foreach(var i in items)
+                {
+                    var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == i.ProductId);
+                    product.Count += i.Count;
+                }
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -480,7 +500,6 @@ namespace ApiDemoShop.Controllers
                 {
                     Id = x.Id,
                     CreateDate = x.CreateDate,
-                    FullCost = x.FullCost,
                     RecieveDate = x.RecieveDate,
                     StatusId = x.StatusId,
                     StatusTitle = x.Status.Title,
@@ -488,6 +507,8 @@ namespace ApiDemoShop.Controllers
                     UserName = x.User.Username,
                     UserEmail = x.User.Email,
                     UserPhone = x.User.ContactPhone,
+                    FullCost = x.OrderItems
+                    .Sum(i => i.Price * i.Count),
                     OrderItems = x.OrderItems
                         .OrderBy(i => i.Id)
                         .Select(i => new OrderItemDTO
@@ -497,7 +518,7 @@ namespace ApiDemoShop.Controllers
                             OrderId = i.OrdeId,
                             ProductId = i.ProductId,
                             ProductName = i.Product.Name,
-                            ProductPrice = i.Product.Price
+                            ProductPrice = i.Price,
                         })
                         .ToList()
                 });

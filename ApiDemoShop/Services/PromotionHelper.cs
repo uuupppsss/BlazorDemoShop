@@ -39,8 +39,21 @@ namespace ApiDemoShop.Services
                 (double)(product.Price -
                 product.Price *
                 (decimal)promotion.Discount / 100m);
+            result.EndDate=promotion.EndDate;
 
             return result;
+        }
+
+        public static decimal GetFinalPrice(Product product)
+        {
+            var promotion = GetActivePromotion(product);
+
+            if (promotion == null)
+                return product.Price;
+
+            return product.Price -
+                   product.Price *
+                   (decimal)promotion.Discount / 100m;
         }
     }
 }

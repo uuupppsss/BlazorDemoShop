@@ -6,6 +6,7 @@
         public int Count { get; set; }
         public int OrdeId { get; set; }
         public int ProductId { get; set; }
+        public decimal Price { get; set; }
 
         public virtual Order Order { get; set; } = null!;
         public virtual Product Product { get; set; } = null!;

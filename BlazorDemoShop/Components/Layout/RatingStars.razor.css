@@ -1,0 +1,13 @@
+﻿.rating-stars {
+    display: flex;
+    gap: 2px;
+    font-size: 22px;
+}
+
+.star {
+    color: lightgray;
+}
+
+    .star.filled {
+        color: orange;
+    }
