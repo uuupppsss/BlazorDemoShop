@@ -1,4 +1,6 @@
 ﻿@page "/admin/promotions"
+@attribute [Authorize(Roles = "admin")]
+
 @using BlazorDemoShop.Components.Layout
 
 @inject PromotionsService PromotionsService
@@ -6,10 +8,10 @@
 
 <h3>Акции</h3>
 
-<button class="btn btn-primary mb-3"
+@* <button class="btn btn-primary mb-3"
         @onclick="OpenCreate">
     Добавить акцию
-</button>
+</button> *@
 
 <table class="table">
     <thead>
@@ -49,14 +51,14 @@
     </tbody>
 </table>
 
-<PromotionForm Promotion="_editingPromotion"
-               OnSaved="Load" />
+@* <PromotionForm Promotion="_editingPromotion"
+               OnSaved="Load" /> *@
 
 @code {
 
     private List<PromotionDto> _promotions = [];
 
-    private PromotionDto? _editingPromotion;
+    //private PromotionDto? _editingPromotion;
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,14 +75,14 @@
         StateHasChanged();
     }
 
-    private void OpenCreate()
-    {
-        _editingPromotion = null;
-    }
+    // private void OpenCreate()
+    // {
+    //     _editingPromotion = null;
+    // }
 
     private void Edit(PromotionDto promotion)
     {
-        _editingPromotion = promotion;
+        //_editingPromotion = promotion;
     }
 
     private async Task Delete(int id)

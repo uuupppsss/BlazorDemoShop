@@ -125,9 +125,16 @@
 
         <AuthorizeView Roles="admin">
             <Authorized>
+                
                 <NavLink class="btn btn-outline-secondary mt-3" href="@($"/products/{_product.Id}/edit")">
                     Редактировать
                 </NavLink>
+
+                <NavLink class="btn btn-warning"
+                         href="@($"/admin/products/{_product.Id}/promotion")">
+                    Добавить акцию
+                </NavLink>
+
             </Authorized>
         </AuthorizeView>
     }

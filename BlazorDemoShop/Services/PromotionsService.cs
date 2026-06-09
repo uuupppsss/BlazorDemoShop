@@ -33,7 +33,7 @@ namespace BlazorDemoShop.Services
                    ?? [];
         }
 
-        public async Task<bool> Create(
+        public async Task Create(
             CreateUpdatePromotionDto dto,
             string? token)
         {
@@ -52,10 +52,14 @@ namespace BlazorDemoShop.Services
 
             var response = await _httpClient.SendAsync(request);
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception(error);
+            }
         }
 
-        public async Task<bool> Update(
+        public async Task Update(
             int id,
             CreateUpdatePromotionDto dto,
             string? token)
@@ -75,7 +79,32 @@ namespace BlazorDemoShop.Services
 
             var response = await _httpClient.SendAsync(request);
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception(error);
+            }
+        }
+
+        public async Task<PromotionDto> GetByProduct(int product_id, string? token)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/promotions/{product_id}");
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                       .ReadFromJsonAsync<PromotionDto>()
+                   ?? new PromotionDto { };
         }
 
         public async Task<bool> Delete(

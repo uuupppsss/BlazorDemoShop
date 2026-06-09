@@ -11,10 +11,10 @@
     {
         <p class="loading-pill">Загружаем детали заказа...</p>
     }
-    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    else if (!string.IsNullOrWhiteSpace(_errorMes))
     {
         <div class="alert alert-danger" role="alert">
-            @_errorMessage
+            @_errorMes
         </div>
     }
     else if (_order is null)
@@ -71,17 +71,17 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">Изменение статуса</h2>
 
-                @if (!string.IsNullOrWhiteSpace(_statusUpdateError))
+                @if (!string.IsNullOrWhiteSpace(_errorMes))
                 {
                     <div class="alert alert-danger" role="alert">
-                        @_statusUpdateError
+                        @_errorMes
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(_statusUpdateSuccess))
+                @if (!string.IsNullOrWhiteSpace(_successMes))
                 {
                     <div class="alert alert-success" role="alert">
-                        @_statusUpdateSuccess
+                        @_successMes
                     </div>
                 }
 
@@ -181,20 +181,41 @@
     private bool _isLoading = true;
     private bool _isUpdatingStatus;
     private int _selectedStatusId;
-    private string? _errorMessage;
-    private string? _statusUpdateError;
-    private string? _statusUpdateSuccess;
+    private string? _errorMes;
+    private string? _successMes;
     private OrderDTO? _order;
     private List<OrderStatusDTO> _availableStatuses = new();
 
     private bool CanEditOrderStatus => _order is not null && OrderStatusUiHelper.CanEditByAdmin(_order.StatusTitle);
 
+    private async Task ShowSuccess(string message)
+    {
+        _successMes = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _successMes = null;
+        StateHasChanged();
+    }
+
+    private async Task ShowError(string message)
+    {
+        _errorMes = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _errorMes = null;
+        StateHasChanged();
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         _isLoading = true;
         _errorMessage = null;
-        _statusUpdateError = null;
-        _statusUpdateSuccess = null;
+        _errorMes = null;
+        _successMes = null;
         _order = null;
         _availableStatuses = new List<OrderStatusDTO>();
         _selectedStatusId = 0;
@@ -234,26 +255,26 @@
         }
 
         _isUpdatingStatus = true;
-        _statusUpdateError = null;
-        _statusUpdateSuccess = null;
+        _errorMes = null;
+        _successMes = null;
 
         try
         {
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _statusUpdateError = "Не удалось определить токен авторизации.";
+                _errorMes = "Не удалось определить токен авторизации.";
                 return;
             }
 
             var updatedOrder = await ApiProductsClient.UpdateOrderStatusAsync(_order.Id, _selectedStatusId, accessToken);
             _order = updatedOrder;
             _selectedStatusId = updatedOrder.StatusId;
-            _statusUpdateSuccess = "Статус заказа обновлен.";
+            _successMes = "Статус заказа обновлен.";
         }
         catch (Exception ex)
         {
-            _statusUpdateError = ex.Message;
+            _errorMes = ex.Message;
         }
         finally
         {

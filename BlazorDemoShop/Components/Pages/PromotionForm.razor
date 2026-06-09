@@ -1,0 +1,143 @@
+﻿@page "/admin/products/{ProductId:int}/promotion"
+@attribute [Authorize(Roles = "admin")]
+
+@inject PromotionsService PromotionsService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+
+
+<EditForm Model="_model"
+          OnValidSubmit="Save">
+
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label>Скидка (%)</label>
+
+        <InputNumber class="form-control"
+                     @bind-Value="_model.Discount" />
+    </div>
+
+    <div class="mb-3">
+        <label>Дата начала</label>
+
+        <InputDate class="form-control"
+                   @bind-Value="_model.StartDate" />
+    </div>
+
+    <div class="mb-3">
+        <label>Дата окончания</label>
+
+        <InputDate class="form-control"
+                   @bind-Value="_model.EndDate" />
+    </div>
+
+    @* <div class="mb-3">
+        <label>ID товара</label>
+
+        <InputNumber class="form-control"
+                     @bind-Value="_model.ProductId" />
+    </div> *@
+
+    <button class="btn btn-success">
+        Сохранить
+    </button>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="alert alert-success mt-3 mb-0" role="alert">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">
+            @_errorMessage
+        </div>
+    }
+
+</EditForm>
+
+
+
+@code {
+
+    [Parameter]
+    public int ProductId { get; set; }
+
+    public PromotionDto Promotion { get; set; }
+
+    private CreateUpdatePromotionDto _model = new();
+
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _errorMessage = string.Empty;
+        _successMessage = string.Empty;
+        await LoadPromotionData();
+    }
+
+    private async Task LoadPromotionData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        Promotion = await PromotionsService.GetByProduct(ProductId, accessToken);
+
+        _model = new CreateUpdatePromotionDto
+        {
+
+            Discount = Promotion.Discount,
+            StartDate = Promotion.StartDate,
+            EndDate = Promotion.EndDate,
+            ProductId = Promotion.ProductId
+        };
+    }
+
+    private async Task Save()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+        if (Promotion.Id == 0)
+        {
+            try
+            {
+                await PromotionsService.Create(_model, accessToken);
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = ex.Message;
+                StateHasChanged();
+                return;
+            }
+            _successMessage = "Акция успешно добавлена";
+            StateHasChanged();
+            await LoadPromotionData();
+        }
+        else
+        {
+            try
+            {
+                await PromotionsService.Update(
+                Promotion.Id,
+                _model,
+                accessToken);
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = ex.Message;
+                StateHasChanged();
+                return;
+            }
+
+            _successMessage = "Акция успешно обновлена";
+            StateHasChanged();
+        
+        }
+
+    }
+}

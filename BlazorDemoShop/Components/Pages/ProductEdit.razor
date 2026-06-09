@@ -1,5 +1,5 @@
 @page "/products/{Id:int}/edit"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "admin")]
 @inject ApiProductsClientService ApiProductsClient
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
