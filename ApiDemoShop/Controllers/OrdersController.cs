@@ -272,7 +272,14 @@ namespace ApiDemoShop.Controllers
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
-                await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
+                //try
+                //{
+                //    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
+                //}
+                //catch (Exception ex)
+                //{
+                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                //}
 
             }
             else if (request.RecieveDate.HasValue)

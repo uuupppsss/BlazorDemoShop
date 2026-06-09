@@ -31,12 +31,7 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_actionErrorMessage))
-        {
-            <div class="alert alert-danger mb-3" role="alert">
-                @_actionErrorMessage
-            </div>
-        }
+        
 
         <div class="cart-layout">
             <div class="cart-items">
@@ -138,10 +133,20 @@
     private bool _isLoading = true;
     private bool _isCreatingOrder;
     private string? _errorMessage;
-    private string? _actionErrorMessage;
 
     private int TotalCount => _items.Sum(x => x.Count);
     private decimal TotalPrice => _items.Sum(x => (x.ProductPrice ?? 0m) * x.Count);
+
+    private async Task ShowError(string message)
+    {
+        _errorMessage = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _errorMessage = null;
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,7 +157,6 @@
     {
         _isLoading = true;
         _errorMessage = null;
-        _actionErrorMessage = null;
 
         try
         {
@@ -160,7 +164,7 @@
 
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _errorMessage = "Не удалось определить токен авторизации.";
+               await ShowError("Не удалось определить токен авторизации.");
                 _items = new List<BasketItemDTO>();
                 return;
             }
@@ -169,7 +173,7 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+            await ShowError(ex.Message);
             _items = new List<BasketItemDTO>();
         }
         finally
@@ -199,8 +203,6 @@
         {
             return;
         }
-
-        _actionErrorMessage = null;
         _busyItemIds.Add(item.Id);
 
         try
@@ -208,7 +210,7 @@
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -217,7 +219,7 @@
         }
         catch (Exception ex)
         {
-            _actionErrorMessage = ex.Message;
+            await ShowError(ex.Message);
         }
         finally
         {
@@ -232,7 +234,7 @@
             return;
         }
 
-        _actionErrorMessage = null;
+        _errorMessage = null;
         _busyItemIds.Add(itemId);
 
         try
@@ -240,7 +242,7 @@
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -249,7 +251,7 @@
         }
         catch (Exception ex)
         {
-            _actionErrorMessage = ex.Message;
+            await ShowError(ex.Message);
         }
         finally
         {
@@ -264,7 +266,7 @@
             return;
         }
 
-        _actionErrorMessage = null;
+        _errorMessage = null;
         _isCreatingOrder = true;
 
         try
@@ -272,7 +274,7 @@
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _actionErrorMessage = "Не удалось определить токен авторизации.";
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -281,7 +283,7 @@
         }
         catch (Exception ex)
         {
-            _actionErrorMessage = ex.Message;
+            await ShowError(ex.Message);
         }
         finally
         {

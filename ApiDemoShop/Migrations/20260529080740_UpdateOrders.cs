@@ -24,13 +24,6 @@ namespace ApiDemoShop.Migrations
                  nullable: true,
                  defaultValue: string.Empty);
 
-            migrationBuilder.AddColumn<bool>(
-                 name: "IsSelfPicked",
-                 table: "Order",
-                 type: "bit",
-                 nullable: false,
-                 defaultValue: false);
-
             migrationBuilder.DropColumn("FullCost", "Order");
         }
 

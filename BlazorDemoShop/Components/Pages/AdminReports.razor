@@ -135,13 +135,6 @@
             </div>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(_tagProductsErrorMessage))
-        {
-            <div class="alert alert-danger" role="alert">
-                @_tagProductsErrorMessage
-            </div>
-        }
-
         @if (_report.Items.Count == 0)
         {
             <div class="alert alert-warning" role="alert">
@@ -230,6 +223,7 @@
 </section>
 
 @code {
+
     private static readonly CultureInfo RuCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private PeriodMode _periodMode = PeriodMode.Custom;
@@ -245,10 +239,21 @@
     private bool _isLoading;
     private int? _loadingTagId;
     private string? _errorMessage;
-    private string? _tagProductsErrorMessage;
+    //private string? _tagProductsErrorMessage;
     private SalesByTagReportDTO? _report;
 
     private int MaxSoldItems => _report?.Items.Count > 0 ? _report.Items.Max(x => x.SoldItems) : 0;
+
+    private async Task ShowError(string message)
+    {
+        _errorMessage = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _errorMessage = null;
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -259,7 +264,6 @@
     {
         _isLoading = true;
         _errorMessage = null;
-        _tagProductsErrorMessage = null;
         _expandedTagIds.Clear();
         _productsReports.Clear();
 
@@ -269,7 +273,8 @@
             if (dateFrom > dateTo)
             {
                 _report = null;
-                _errorMessage = "Дата начала периода не может быть позже даты окончания.";
+
+                await ShowError("Дата начала периода не может быть позже даты окончания.");
                 return;
             }
 
@@ -277,7 +282,7 @@
             if (string.IsNullOrWhiteSpace(accessToken))
             {
                 _report = null;
-                _errorMessage = "Не удалось определить токен авторизации.";
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -286,7 +291,7 @@
         catch (Exception ex)
         {
             _report = null;
-            _errorMessage = ex.Message;
+            await ShowError(ex.Message);
         }
         finally
         {
@@ -296,7 +301,6 @@
 
     private async Task ToggleTagProductsAsync(SalesByTagReportItemDTO reportItem)
     {
-        _tagProductsErrorMessage = null;
 
         if (_expandedTagIds.Contains(reportItem.TagId))
         {
@@ -318,7 +322,7 @@
                 var accessToken = await GetAccessTokenAsync();
                 if (string.IsNullOrWhiteSpace(accessToken))
                 {
-                    _tagProductsErrorMessage = "Не удалось определить токен авторизации.";
+                   await ShowError("Не удалось определить токен авторизации.");
                     return;
                 }
 
@@ -332,7 +336,7 @@
             }
             catch (Exception ex)
             {
-                _tagProductsErrorMessage = ex.Message;
+                await ShowError(ex.Message);
                 return;
             }
             finally

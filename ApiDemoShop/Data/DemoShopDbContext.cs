@@ -50,6 +50,8 @@ namespace ApiDemoShop.Data
 
         public DbSet<Promotion> Promotions { get; set; }
 
+        public DbSet<DeliveryMethod> DeliveryMethods { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)

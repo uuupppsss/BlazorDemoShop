@@ -7,15 +7,22 @@
 <PageTitle>Заказ администратора</PageTitle>
 
 <section class="page-shell admin-order-shell">
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="alert alert-success mt-3 mb-0" role="alert">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">
+            @_errorMessage
+        </div>
+    }
     @if (_isLoading)
     {
         <p class="loading-pill">Загружаем детали заказа...</p>
-    }
-    else if (!string.IsNullOrWhiteSpace(_errorMes))
-    {
-        <div class="alert alert-danger" role="alert">
-            @_errorMes
-        </div>
     }
     else if (_order is null)
     {
@@ -71,17 +78,17 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">Изменение статуса</h2>
 
-                @if (!string.IsNullOrWhiteSpace(_errorMes))
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <div class="alert alert-danger" role="alert">
-                        @_errorMes
+                        @_errorMessage
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(_successMes))
+                @if (!string.IsNullOrWhiteSpace(_successMessage))
                 {
                     <div class="alert alert-success" role="alert">
-                        @_successMes
+                        @_successMessage
                     </div>
                 }
 
@@ -172,6 +179,21 @@
 </section>
 
 @code {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
 
@@ -181,8 +203,8 @@
     private bool _isLoading = true;
     private bool _isUpdatingStatus;
     private int _selectedStatusId;
-    private string? _errorMes;
-    private string? _successMes;
+    private string? _errorMessage;
+    private string? _successMessage;
     private OrderDTO? _order;
     private List<OrderStatusDTO> _availableStatuses = new();
 
@@ -190,23 +212,23 @@
 
     private async Task ShowSuccess(string message)
     {
-        _successMes = message;
+        _successMessage = message;
         StateHasChanged();
 
         await Task.Delay(3000);
 
-        _successMes = null;
+        _successMessage = null;
         StateHasChanged();
     }
 
     private async Task ShowError(string message)
     {
-        _errorMes = message;
+        _errorMessage = message;
         StateHasChanged();
 
         await Task.Delay(3000);
 
-        _errorMes = null;
+        _errorMessage = null;
         StateHasChanged();
     }
 
@@ -214,8 +236,7 @@
     {
         _isLoading = true;
         _errorMessage = null;
-        _errorMes = null;
-        _successMes = null;
+        _successMessage = null;
         _order = null;
         _availableStatuses = new List<OrderStatusDTO>();
         _selectedStatusId = 0;
@@ -225,7 +246,8 @@
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _errorMessage = "Не удалось определить токен авторизации.";
+
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -239,7 +261,8 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+
+            await ShowError(ex.Message);
         }
         finally
         {
@@ -255,26 +278,28 @@
         }
 
         _isUpdatingStatus = true;
-        _errorMes = null;
-        _successMes = null;
+        _errorMessage = null;
+        _successMessage = null;
 
         try
         {
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _errorMes = "Не удалось определить токен авторизации.";
+
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
             var updatedOrder = await ApiProductsClient.UpdateOrderStatusAsync(_order.Id, _selectedStatusId, accessToken);
             _order = updatedOrder;
             _selectedStatusId = updatedOrder.StatusId;
-            _successMes = "Статус заказа обновлен.";
+
+            await ShowSuccess("Статус заказа обновлен.");
         }
         catch (Exception ex)
         {
-            _errorMes = ex.Message;
+            await ShowError(ex.Message);
         }
         finally
         {

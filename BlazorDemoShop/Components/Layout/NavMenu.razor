@@ -58,6 +58,12 @@
                             <NavLink class="nav-link" href="profile">
                                 <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @auth.User.Identity?.Name
                             </NavLink>
+
+                                <div class="nav-item px-3">
+                                    <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">
+                                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Выйти
+                                    </button>
+                                </div>
                             </div>
                     </nav>
             </div>    
@@ -91,7 +97,7 @@
 
                                 <NavLink href="/admin/tags-management" class="nav-link submenu">
                                     <i class="bi bi-tags"></i>
-                                    <span>*Теги</span>
+                                    <span>Теги</span>
                                 </NavLink>
                             </div>
 
@@ -143,11 +149,7 @@
 
                 
 
-                <div class="nav-item px-3">
-                    <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">
-                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Выйти
-                    </button>
-                </div>
+                
             </Authorized>
             <NotAuthorized>
                     <div class="nav-item px-3">

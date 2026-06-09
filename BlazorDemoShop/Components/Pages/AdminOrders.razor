@@ -102,6 +102,9 @@
 </section>
 
 @code {
+
+
+
     private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
 
@@ -111,6 +114,17 @@
     private string? _searchUserQuery;
     private int? _searchOrderId;
     private DateTime? _searchDate;
+
+    private async Task ShowError(string message)
+    {
+        _errorMessage = message;
+        StateHasChanged();
+
+        await Task.Delay(3000);
+
+        _errorMessage = null;
+        StateHasChanged();
+    }
 
     protected override Task OnInitializedAsync()
     {
@@ -141,7 +155,8 @@
             var accessToken = await GetAccessTokenAsync();
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                _errorMessage = "Не удалось определить токен авторизации.";
+
+                await ShowError("Не удалось определить токен авторизации.");
                 return;
             }
 
@@ -153,7 +168,8 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = ex.Message;
+
+            await ShowError(ex.Message);
         }
         finally
         {

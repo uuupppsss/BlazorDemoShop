@@ -4,6 +4,7 @@ using ApiDemoShop.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApiDemoShop.Migrations
 {
     [DbContext(typeof(DemoShopDbContext))]
-    partial class DemoShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609061524_Delivery")]
+    partial class Delivery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,29 +53,6 @@ namespace ApiDemoShop.Migrations
                     b.HasIndex(new[] { "UserId" }, "IX_BasketItem_UserId");
 
                     b.ToTable("BasketItem", (string)null);
-                });
-
-            modelBuilder.Entity("ApiDemoShop.Model.DeliveryMethod", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DeliveryMethods");
                 });
 
             modelBuilder.Entity("ApiDemoShop.Model.EmailVerificationCode", b =>
@@ -125,11 +105,8 @@ namespace ApiDemoShop.Migrations
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DeliveryMethodId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DeliveryTypeId")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsSelfPicked")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("RecieveDate")
                         .HasColumnType("datetime2");
@@ -143,8 +120,6 @@ namespace ApiDemoShop.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DeliveryMethodId");
 
                     b.HasIndex(new[] { "StatusId" }, "IX_Order_StatusId");
 
@@ -549,12 +524,6 @@ namespace ApiDemoShop.Migrations
 
             modelBuilder.Entity("ApiDemoShop.Model.Order", b =>
                 {
-                    b.HasOne("ApiDemoShop.Model.DeliveryMethod", "DeliveryMethod")
-                        .WithMany("Orders")
-                        .HasForeignKey("DeliveryMethodId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("ApiDemoShop.Model.OrderStatus", "Status")
                         .WithMany("Orders")
                         .HasForeignKey("StatusId")
@@ -566,8 +535,6 @@ namespace ApiDemoShop.Migrations
                         .HasForeignKey("UserId")
                         .IsRequired()
                         .HasConstraintName("FK_Order_User");
-
-                    b.Navigation("DeliveryMethod");
 
                     b.Navigation("Status");
 
@@ -694,11 +661,6 @@ namespace ApiDemoShop.Migrations
                         .HasConstraintName("FK_User_UserRole");
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("ApiDemoShop.Model.DeliveryMethod", b =>
-                {
-                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("ApiDemoShop.Model.Order", b =>

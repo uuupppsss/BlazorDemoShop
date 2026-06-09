@@ -7,12 +7,13 @@
         public DateTime? RecieveDate { get; set; }
         public int StatusId { get; set; }
         public int UserId { get; set; }
-
         public string? Address { get; set; } = null;
-        public bool IsSelfPicked { get; set; }
+        public int DeliveryTypeId { get; set; }
 
         public virtual OrderStatus Status { get; set; } = null!;
         public virtual User User { get; set; } = null!;
+        public virtual DeliveryMethod DeliveryMethod { get; set; } = null!;
+
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
