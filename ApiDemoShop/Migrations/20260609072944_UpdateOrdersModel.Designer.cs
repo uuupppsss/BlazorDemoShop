@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApiDemoShop.Migrations
 {
     [DbContext(typeof(DemoShopDbContext))]
-    [Migration("20260609064348_SeedOrdersData")]
-    partial class SeedOrdersData
+    [Migration("20260609072944_UpdateOrdersModel")]
+    partial class UpdateOrdersModel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

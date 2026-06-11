@@ -13,4 +13,10 @@ namespace LibDemoShop
         public decimal Price { get; set; }
         public bool IsActive { get; set; }
     }
+
+    public class CreateDeliveryMethodDTO
+    {
+        public string Name { get; set; } = null!;
+        public decimal Price { get; set; }
+    }
 }

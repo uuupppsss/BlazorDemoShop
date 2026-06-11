@@ -88,6 +88,18 @@
                 </div>
 
                 <div class="order-info-row">
+                    <span>Адрес</span>
+                    <strong>@_order.Address</strong>
+                </div>
+
+                <div class="order-info-row">
+                    <span>Доставка</span>
+                    <strong>@_order.TrackingLink</strong>
+                    <strong>@_order.DeliveryName</strong>
+                    <strong>@FormatPrice(_order.DeliveryPrice)</strong>
+                </div>
+
+                <div class="order-info-row">
                     <span>Время заказа</span>
                     <strong>@FormatDateTime(_order.CreateDate)</strong>
                 </div>

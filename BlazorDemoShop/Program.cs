@@ -2,6 +2,7 @@
 using BlazorDemoShop.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
 using System.Security.Claims;
 
 namespace BlazorDemoShop
@@ -71,6 +72,13 @@ namespace BlazorDemoShop
             });
 
             builder.Services.AddHttpClient<PromotionsService>((serviceProvider, client) =>
+            {
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var baseUrl = configuration["ApiSettings:BaseUrl"];
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+            });
+
+            builder.Services.AddHttpClient<ApiDeliveryService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];

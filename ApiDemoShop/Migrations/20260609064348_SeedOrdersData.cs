@@ -24,7 +24,8 @@ namespace ApiDemoShop.Migrations
                     { 2, "В сборке" },
                     { 3, "Завершен" },
                     { 4, "Отменен" },
-                    { 5, "Передан в доставку" }
+                    { 5, "Передан в доставку" },
+                    { 6, "Готов к выдаче" }
                });
 
             migrationBuilder.Sql(@"SET IDENTITY_INSERT [OrderStatus] OFF;");

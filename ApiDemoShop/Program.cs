@@ -1,8 +1,10 @@
 ﻿using ApiDemoShop.Data;
 using ApiDemoShop.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System;
 
 
 namespace ApiDemoShop
@@ -15,7 +17,13 @@ namespace ApiDemoShop
 
             // Add services to the container.
             //builder.Services.AddAutoMapper(typeof(MappingProfile));
-            builder.Services.AddDbContext<DemoShopDbContext>();
+            //builder.Services.AddDbContext<DemoShopDbContext>();
+            builder.Services.AddDbContext<DemoShopDbContext>(options =>
+        options
+        .EnableSensitiveDataLogging()
+        .LogTo(Console.WriteLine));
+
+
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<EmailService>();
             builder.Services.AddScoped<JwtService>();
@@ -67,6 +75,8 @@ namespace ApiDemoShop
                       }
                     });
             });
+
+            
 
             var app = builder.Build();
 

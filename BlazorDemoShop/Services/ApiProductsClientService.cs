@@ -376,10 +376,13 @@ namespace BlazorDemoShop.Services
         }
 
         public async Task<OrderDTO> CreateOrderAsync(
-            string? token,
+            string? token, CreateOrderDTO dto,
             CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/orders");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/orders")
+            {
+                Content = JsonContent.Create(dto)
+            };
             AppendAuthHeader(request, token);
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -697,19 +700,13 @@ namespace BlazorDemoShop.Services
 
         public async Task<OrderDTO> UpdateOrderStatusAsync(
             int orderId,
-            int statusId,
+            UpdateOrderStatusDTO dto,
             string? token,
-            DateTime? recieveDate = null,
             CancellationToken cancellationToken = default)
         {
             using var request = new HttpRequestMessage(HttpMethod.Put, $"api/orders/{orderId}/status")
             {
-                Content = JsonContent.Create(new UpdateOrderStatusDTO
-                {
-                    OrderId = orderId,
-                    StatusId = statusId,
-                    RecieveDate = recieveDate
-                })
+                Content = JsonContent.Create(dto)
             };
 
             AppendAuthHeader(request, token);

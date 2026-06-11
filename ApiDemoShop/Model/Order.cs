@@ -1,4 +1,6 @@
-﻿namespace ApiDemoShop.Model
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ApiDemoShop.Model
 {
     public class Order
     {
@@ -8,11 +10,16 @@
         public int StatusId { get; set; }
         public int UserId { get; set; }
         public string? Address { get; set; } = null;
-        public int DeliveryTypeId { get; set; }
+        public int DeliveryMethodId { get; set; }
+        public decimal DeliveryPrice { get; set; }
+        public string? TrackingLink { get; set; }
 
         public virtual OrderStatus Status { get; set; } = null!;
         public virtual User User { get; set; } = null!;
+
+        //[ForeignKey(nameof(DeliveryMethodId))]
         public virtual DeliveryMethod DeliveryMethod { get; set; } = null!;
+
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

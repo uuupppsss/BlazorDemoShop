@@ -43,7 +43,7 @@ namespace ApiDemoShop.Migrations
                });
 
             migrationBuilder.AddColumn<string>(
-                 name: "DeliveryTypeId",
+                 name: "DeliveryMethodId",
                  table: "Order",
                  type: "int",
                  nullable: false,
@@ -52,7 +52,7 @@ namespace ApiDemoShop.Migrations
             migrationBuilder.AddForeignKey(
               name: "FK_Order_Delivery",
               table: "Order",
-              column: "DeliveryTypeId",
+              column: "DeliveryMethodId",
               principalTable: "DeliveryMethod",
               principalColumn: "id",
               onDelete: ReferentialAction.Cascade);

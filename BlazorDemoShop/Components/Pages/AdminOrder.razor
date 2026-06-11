@@ -56,6 +56,19 @@
                 </div>
 
                 <div class="admin-order-row">
+                    <span>Адрес</span>
+                    <strong>@_order.Address</strong>
+                </div>
+
+                <div class="admin-order-row">
+                    <span>Доставка</span>
+                    <strong>@_order.TrackingLink</strong>
+                    <strong>@_order.DeliveryName</strong>
+                    <strong>@FormatPrice(_order.DeliveryPrice)</strong>
+                </div>
+
+
+                <div class="admin-order-row">
                     <span>Создан</span>
                     <strong>@FormatDateTime(_order.CreateDate)</strong>
                 </div>
@@ -118,9 +131,33 @@
                             }
                         </select>
 
+                        @if (IsShippingStatus)
+                        {
+                            <div class="mt-3">
+                                <label class="form-label">
+                                    Ссылка для отслеживания
+                                </label>
+
+                                <InputText class="form-control"
+                                           @bind-Value="_trackingLink"
+                                           placeholder="https://..." />
+
+                                <small class="text-muted">
+                                    Клиент сможет перейти по этой ссылке для отслеживания доставки.
+                                </small>
+                            </div>
+                        }
+
                         <button type="button"
                                 class="btn btn-success"
-                                disabled="@(_isUpdatingStatus || !CanEditOrderStatus || _selectedStatusId <= 0 || _selectedStatusId == _order.StatusId)"
+                                disabled="@(
+                                _isUpdatingStatus ||
+                                !CanEditOrderStatus ||
+                                _selectedStatusId <= 0 ||
+                                _selectedStatusId == _order.StatusId ||
+                                (IsShippingStatus &&
+                                 string.IsNullOrWhiteSpace(_trackingLink))
+)"
                                 @onclick="UpdateStatusAsync">
                             @(_isUpdatingStatus ? "Сохраняем..." : "Сохранить статус")
                         </button>
@@ -180,20 +217,6 @@
 
 @code {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private static readonly CultureInfo PriceCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly CultureInfo DateTimeCulture = CultureInfo.GetCultureInfo("ru-RU");
 
@@ -205,6 +228,11 @@
     private int _selectedStatusId;
     private string? _errorMessage;
     private string? _successMessage;
+    private string? _trackingLink;
+    private bool IsShippingStatus =>
+    _availableStatuses
+        .FirstOrDefault(x => x.Id == _selectedStatusId)?
+        .Title == "Передан в доставку";
     private OrderDTO? _order;
     private List<OrderStatusDTO> _availableStatuses = new();
 
@@ -257,6 +285,11 @@
             if (_order is not null)
             {
                 _selectedStatusId = _order.StatusId;
+                if (_order.DeliveryMethodId == 1)
+                {
+                    _availableStatuses.RemoveAll(x =>
+                        x.Title == "Передан в доставку");
+                }
             }
         }
         catch (Exception ex)
@@ -291,7 +324,14 @@
                 return;
             }
 
-            var updatedOrder = await ApiProductsClient.UpdateOrderStatusAsync(_order.Id, _selectedStatusId, accessToken);
+            var dto = new UpdateOrderStatusDTO
+            {
+                OrderId=_order.Id,
+                StatusId=_selectedStatusId,
+                TrackingLink=_trackingLink
+            };
+
+            var updatedOrder = await ApiProductsClient.UpdateOrderStatusAsync(_order.Id, dto, accessToken);
             _order = updatedOrder;
             _selectedStatusId = updatedOrder.StatusId;
 

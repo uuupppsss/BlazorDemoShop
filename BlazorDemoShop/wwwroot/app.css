@@ -1264,7 +1264,31 @@ code {
             transform: scale(1.1);
         }
 
-   
+   /*CART*/
+    .delivery-section {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .delivery-option {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+
+        .delivery-option:hover {
+            background-color: #f8f9fa;
+        }
+
+    .delivery-option-content {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
 
 
 }

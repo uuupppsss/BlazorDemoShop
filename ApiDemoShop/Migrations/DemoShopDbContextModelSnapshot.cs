@@ -128,7 +128,7 @@ namespace ApiDemoShop.Migrations
                     b.Property<int>("DeliveryMethodId")
                         .HasColumnType("int");
 
-                    b.Property<int>("DeliveryTypeId")
+                    b.Property<int>("DeliveryMethodId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("RecieveDate")

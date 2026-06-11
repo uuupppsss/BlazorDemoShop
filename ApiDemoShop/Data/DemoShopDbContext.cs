@@ -155,9 +155,6 @@ namespace ApiDemoShop.Data
                 entity.Property(e => e.CreateDate)
                     .HasColumnType("datetime2");
 
-                //entity.Property(e => e.FullCost)
-                //    .HasColumnType("decimal(19,2)");
-
                 entity.Property(e => e.RecieveDate)
                     .HasColumnType("datetime2");
 
@@ -178,6 +175,10 @@ namespace ApiDemoShop.Data
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Order_User");
+
+                entity.HasOne(o => o.DeliveryMethod)
+                    .WithMany(d => d.Orders)
+                    .HasForeignKey(o => o.DeliveryMethodId);
             });
 
             modelBuilder.Entity<OrderItem>(entity =>
@@ -463,6 +464,11 @@ namespace ApiDemoShop.Data
                     .HasForeignKey(x => x.ProductId)
                     .OnDelete(DeleteBehavior.Cascade);
 
+            });
+
+            modelBuilder.Entity<DeliveryMethod>(entity =>
+            {
+                entity.ToTable("DeliveryMethod");
             });
 
             OnModelCreatingPartial(modelBuilder);

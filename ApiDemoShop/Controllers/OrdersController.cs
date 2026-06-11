@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Net.WebSockets;
 using System.Security.Claims;
 
 namespace ApiDemoShop.Controllers
@@ -15,10 +16,13 @@ namespace ApiDemoShop.Controllers
     [Authorize]
     public class OrdersController : ControllerBase
     {
-        private const string ActiveStatusTitle = "Активный";
+
+        private const string ActiveStatusTitle = "В сборке";
         private const string CompletedStatusTitle = "Завершен";
         private const string CancelledStatusTitle = "Отменен";
         private const string LegacyAcceptedStatusTitle = "Принят";
+        private const string TransferredStatusTitle = "Передан в доставку";
+        private const string ReadyStatusTitle = "Готов к выдаче";
 
         private readonly EmailService _emailService;
 
@@ -32,12 +36,18 @@ namespace ApiDemoShop.Controllers
 
         [HttpPost]
         [Authorize(Roles = "user")]
-        public async Task<ActionResult<OrderDTO>> CreateOrder(CancellationToken cancellationToken = default)
+        public async Task<ActionResult<OrderDTO>> CreateOrder
+            (CreateOrderDTO dto, CancellationToken cancellationToken = default)
         {
             if (!TryGetCurrentUserId(out var userId))
             {
                 return Unauthorized();
             }
+
+            if (dto == null) return NotFound();
+
+            if (dto.DeliveryMethodId <= 0) return BadRequest("Выберите способ доставки");
+            if (dto.DeliveryMethodId !=1&& string.IsNullOrWhiteSpace(dto.Address)) return BadRequest("Введите адрес");
 
             var basketItems = await _dbContext.BasketItems
                 .Where(x => x.UserId == userId)
@@ -48,17 +58,26 @@ namespace ApiDemoShop.Controllers
                 return BadRequest("Корзина пуста.");
             }
 
+            var delivery = await _dbContext.DeliveryMethods.FindAsync(dto.DeliveryMethodId);
+            if (delivery == null) return BadRequest("Ошибка доставки");
+
             await using var transaction = await _dbContext.Database
                 .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
             var statusesByTitle = await EnsureDefaultStatusesAsync(cancellationToken);
-            var activeStatus = statusesByTitle[ActiveStatusTitle];
+            var activeStatus = statusesByTitle[LegacyAcceptedStatusTitle];
+
+            
 
             var order = new Order
             {
                 CreateDate = DateTime.Now,
                 StatusId = activeStatus.Id,
-                UserId = userId
+                UserId = userId,
+                Address = dto.Address,
+                DeliveryMethodId= dto.DeliveryMethodId,
+                DeliveryPrice=delivery.Price
+                
             };
 
             _dbContext.Orders.Add(order);
@@ -269,6 +288,41 @@ namespace ApiDemoShop.Controllers
 
             order.StatusId = status.Id;
 
+            if (targetKind == OrderStatusKind.Transferred)
+            {
+                if (order.DeliveryMethodId == 1)
+                    return BadRequest("При самовывозе доставка невозможна");
+
+                if (String.IsNullOrWhiteSpace(request.TrackingLink)) 
+                    return BadRequest("Введите ссылку отслеживания");
+                order.TrackingLink = request.TrackingLink;
+
+                //try
+                //{
+                    //await _emailService.SendMessageAsync
+                    //(order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ");
+                //}
+                //catch (Exception ex)
+                //{
+                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                //}
+
+            }
+
+            if (targetKind == OrderStatusKind.Ready)
+            {
+
+                //try
+                //{
+                //    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} готов к выдаче");
+                //}
+                //catch (Exception ex)
+                //{
+                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                //}
+
+            }
+
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
@@ -302,6 +356,8 @@ namespace ApiDemoShop.Controllers
                 }
             }
 
+            
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
@@ -310,6 +366,9 @@ namespace ApiDemoShop.Controllers
 
             return Ok(response);
         }
+
+        
+
 
         [HttpGet("reports/sales-by-tags")]
         [Authorize(Roles = "admin")]
@@ -509,13 +568,18 @@ namespace ApiDemoShop.Controllers
                     CreateDate = x.CreateDate,
                     RecieveDate = x.RecieveDate,
                     StatusId = x.StatusId,
+                    DeliveryPrice = x.DeliveryPrice,
+                    DeliveryMethodId = x.DeliveryMethodId,
+                    DeliveryName=x.DeliveryMethod.Name,
+                    Address = x.Address,
+                    TrackingLink=x.TrackingLink,
                     StatusTitle = x.Status.Title,
                     UserId = x.UserId,
                     UserName = x.User.Username,
                     UserEmail = x.User.Email,
                     UserPhone = x.User.ContactPhone,
                     FullCost = x.OrderItems
-                    .Sum(i => i.Price * i.Count),
+                    .Sum(i => i.Price * i.Count)+x.DeliveryPrice,
                     OrderItems = x.OrderItems
                         .OrderBy(i => i.Id)
                         .Select(i => new OrderItemDTO
@@ -675,7 +739,9 @@ namespace ApiDemoShop.Controllers
             {
                 ActiveStatusTitle,
                 CompletedStatusTitle,
-                CancelledStatusTitle
+                CancelledStatusTitle,
+                TransferredStatusTitle,
+                LegacyAcceptedStatusTitle
             };
 
             var existingStatuses = await _dbContext.OrderStatuses
@@ -714,7 +780,7 @@ namespace ApiDemoShop.Controllers
                 return false;
             }
 
-            var isActive = normalized.Contains("актив") || normalized.Contains("active");
+            var isActive = normalized.Contains("в сборке") || normalized.Contains("active");
             var isAccepted = normalized.Contains("принят")
                 || normalized.Contains("accepted")
                 || string.Equals(statusTitle, LegacyAcceptedStatusTitle, StringComparison.OrdinalIgnoreCase);
@@ -724,32 +790,14 @@ namespace ApiDemoShop.Controllers
 
         private static OrderStatusKind ResolveStatusKind(string? statusTitle)
         {
-            var normalized = statusTitle?.Trim().ToLowerInvariant() ?? string.Empty;
-
-            if (normalized.Contains("отмен") || normalized.Contains("cancel"))
+            return statusTitle?.Trim() switch
             {
-                return OrderStatusKind.Cancelled;
-            }
-
-            if (normalized.Contains("заверш")
-                || normalized.Contains("выполн")
-                || normalized.Contains("complete")
-                || normalized.Contains("done")
-                || normalized.Contains("получ"))
-            {
-                return OrderStatusKind.Completed;
-            }
-
-            if (normalized.Contains("актив")
-                || normalized.Contains("принят")
-                || normalized.Contains("обраб")
-                || normalized.Contains("active")
-                || string.Equals(statusTitle, LegacyAcceptedStatusTitle, StringComparison.OrdinalIgnoreCase))
-            {
-                return OrderStatusKind.Active;
-            }
-
-            return OrderStatusKind.Active;
+                "Отменён" => OrderStatusKind.Cancelled,
+                "Получен" => OrderStatusKind.Completed,
+                "Передан в доставку" => OrderStatusKind.Transferred,
+                "Готов к выдаче" => OrderStatusKind.Ready,
+                _ => OrderStatusKind.Active
+            };
         }
 
         private bool TryGetCurrentUserId(out int userId)
@@ -763,7 +811,9 @@ namespace ApiDemoShop.Controllers
         {
             Active = 2,
             Completed = 3,
-            Cancelled = 4
+            Cancelled = 4,
+            Transferred=5,
+            Ready = 1024
         }
     }
 }
