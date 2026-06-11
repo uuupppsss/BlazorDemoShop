@@ -67,6 +67,7 @@ namespace ApiDemoShop.Controllers
 
             found.Name = dto.Name;
             found.Price = dto.Price;
+            found.IsActive = dto.IsActive;
 
             try
             {
@@ -83,7 +84,7 @@ namespace ApiDemoShop.Controllers
 
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateDeliveryMethod(CreateDeliveryMethodDTO dto)
+        public async Task<IActionResult> CreateDeliveryMethod(DeliveryMethodDTO dto)
         {
 
             var found = await _context.DeliveryMethods
@@ -95,7 +96,7 @@ namespace ApiDemoShop.Controllers
             {
                 Name=dto.Name,
                 Price=dto.Price,
-                IsActive=true
+                IsActive=dto.IsActive
                 
             };
 
@@ -114,50 +115,50 @@ namespace ApiDemoShop.Controllers
 
         }
 
-        [HttpPut("disable/{id}")]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Disable(int id)
-        {
-            var found = await _context.DeliveryMethods
-                .FirstOrDefaultAsync(x => x.Id == id);
+        //[HttpPut("disable/{id}")]
+        //[Authorize(Roles = "admin")]
+        //public async Task<IActionResult> Disable(int id)
+        //{
+        //    var found = await _context.DeliveryMethods
+        //        .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (found == null) return NotFound("Запись не найдена");
+        //    if (found == null) return NotFound("Запись не найдена");
 
-            found.IsActive = false;
+        //    found.IsActive = false;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
 
-        [HttpPut("enable/{id}")]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Enable(int id)
-        {
-            var found = await _context.DeliveryMethods
-                .FirstOrDefaultAsync(x => x.Id == id);
+        //[HttpPut("enable/{id}")]
+        //[Authorize(Roles = "admin")]
+        //public async Task<IActionResult> Enable(int id)
+        //{
+        //    var found = await _context.DeliveryMethods
+        //        .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (found == null) return NotFound("Запись не найдена");
+        //    if (found == null) return NotFound("Запись не найдена");
 
-            found.IsActive = true;
+        //    found.IsActive = true;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
     }
 }

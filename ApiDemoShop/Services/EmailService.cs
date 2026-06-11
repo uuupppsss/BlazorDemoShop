@@ -46,8 +46,8 @@ namespace ApiDemoShop.Services
                 new MailAddress(senderEmail, senderName),
                 new MailAddress(email))
             {
-                Subject = "Код подтверждения email",
-                Body = $"Для подтверждения регистрации используйте код: {mes}",
+                Subject = "Сообщение от BlazorDemoShop",
+                Body = mes,
                 IsBodyHtml = false
             };
 

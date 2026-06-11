@@ -1,0 +1,281 @@
+﻿@page "/admin/delivery-methods"
+@attribute [Authorize (Roles ="admin")]
+@inject ApiDeliveryService DeliveryMethodService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Способы доставки</PageTitle>
+
+<section class="page-shell">
+
+    ```
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">Способы доставки</h1>
+
+        <button class="btn btn-success"
+                @onclick="CreateNew">
+            + Добавить способ доставки
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="alert alert-success">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger">
+            @_errorMessage
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <p class="loading-pill">
+            Загружаем способы доставки...
+        </p>
+    }
+    else if (_deliveryMethods.Count == 0)
+    {
+        <div class="alert alert-warning">
+            Способы доставки не найдены.
+        </div>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Стоимость</th>
+                    <th>Активен</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var method in _deliveryMethods)
+                {
+                    <tr>
+                        <td>@method.Id</td>
+                        <td>@method.Name</td>
+                        <td>@FormatPrice(method.Price)</td>
+
+                        <td>
+                            @(method.IsActive ? "Да" : "Нет")
+                        </td>
+
+                        <td>
+                            <button class="btn btn-warning"
+                                    @onclick="() => Edit(method)">
+                                Изменить
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (_showForm)
+    {
+        <div class="card mt-4">
+            <div class="card-body">
+
+                <h3 class="mb-3">
+                    @(_isEditMode
+                                    ? "Редактирование способа доставки"
+                                    : "Новый способ доставки")
+                                                          </h3>
+
+                <EditForm Model="_model"
+                          OnValidSubmit="SaveAsync">
+
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Название
+                        </label>
+
+                        <InputText class="form-control"
+                                   @bind-Value="_model.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Стоимость доставки
+                        </label>
+
+                        <InputNumber class="form-control"
+                                     @bind-Value="_model.Price" />
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <InputCheckbox class="form-check-input"
+                                       @bind-Value="_model.IsActive" />
+
+                        <label class="form-check-label">
+                            Активен
+                        </label>
+                    </div>
+
+                    <button class="btn btn-success"
+                            type="submit"
+                            disabled="@_isSaving">
+                        @(_isSaving
+                                            ? "Сохранение..."
+                                            : "Сохранить")
+                </button>
+
+                    <button class="btn btn-secondary ms-2"
+                            type="button"
+                            @onclick="Cancel">
+                        Отмена
+                    </button>
+
+                </EditForm>
+
+            </div>
+        </div>
+        }
+    ```
+
+</section>
+
+@code {
+    private bool _isLoading;
+    private bool _isSaving;
+
+    private bool _showForm;
+    private bool _isEditMode;
+
+    private int? _editingId;
+
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private List<DeliveryMethodDTO> _deliveryMethods = [];
+
+    private DeliveryMethodDTO _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            var token = await GetAccessTokenAsync();
+            _deliveryMethods =
+                await DeliveryMethodService.GetAllMethods(token);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void CreateNew()
+    {
+        _isEditMode = false;
+
+        _editingId = null;
+
+        _model = new DeliveryMethodDTO
+        {
+            IsActive = true
+        };
+
+        _showForm = true;
+    }
+
+    private void Edit(DeliveryMethodDTO method)
+    {
+        _isEditMode = true;
+
+        _editingId = method.Id;
+
+        _model = new DeliveryMethodDTO
+        {
+            Id=_editingId!.Value,
+            Name = method.Name,
+            Price = method.Price,
+            IsActive = method.IsActive
+        };
+
+        _showForm = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _errorMessage = null;
+        _successMessage = null;
+
+        _isSaving = true;
+
+        var token = await GetAccessTokenAsync();
+
+        try
+        {
+            if (_isEditMode)
+            {
+                
+                await DeliveryMethodService.Update(
+                    _editingId!.Value,
+                    _model, token);
+
+                _successMessage =
+                    "Способ доставки успешно обновлен.";
+            }
+            else
+            {
+                await DeliveryMethodService.Create(
+                    _model,token);
+
+                _successMessage =
+                    "Способ доставки успешно создан.";
+            }
+
+            _showForm = false;
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        _showForm = false;
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        return authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+    }
+
+    private static string FormatPrice(decimal price)
+        => $"{price:N2} ₽";
+
+}

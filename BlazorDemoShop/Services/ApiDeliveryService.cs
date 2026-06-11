@@ -48,5 +48,62 @@ namespace BlazorDemoShop.Services
             var orders = await response.Content.ReadFromJsonAsync<List<DeliveryMethodDTO>>(cancellationToken: cancellationToken);
             return orders ?? new List<DeliveryMethodDTO>();
         }
+
+        public async Task Create(DeliveryMethodDTO dto, string? token, CancellationToken cancellationToken=default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"api/DeliveryMethods")
+            {
+                Content=JsonContent.Create(dto)
+            };
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить данные."
+                    : message);
+            }
+
+        }
+
+        public async Task Update(int id, DeliveryMethodDTO dto, string? token, CancellationToken cancellationToken=default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, $"api/DeliveryMethods/{id}")
+            {
+                Content = JsonContent.Create(dto)
+            };
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new InvalidOperationException("Недостаточно прав.");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(message)
+                    ? "Не удалось получить данные."
+                    : message);
+            }
+        }
     }
 }
