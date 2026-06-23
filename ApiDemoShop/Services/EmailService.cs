@@ -57,7 +57,7 @@ namespace ApiDemoShop.Services
                 EnableSsl = enableSsl
             };
 
-            _logger.LogInformation("Отправка кода подтверждения регистрации на {Email}", email);
+            _logger.LogInformation("Отправка сообщения на {Email}", email);
             await smtp.SendMailAsync(message, cancellationToken);
         }
 

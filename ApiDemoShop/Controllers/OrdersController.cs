@@ -793,7 +793,7 @@ namespace ApiDemoShop.Controllers
             return statusTitle?.Trim() switch
             {
                 "Отменён" => OrderStatusKind.Cancelled,
-                "Получен" => OrderStatusKind.Completed,
+                "Завершен" => OrderStatusKind.Completed,
                 "Передан в доставку" => OrderStatusKind.Transferred,
                 "Готов к выдаче" => OrderStatusKind.Ready,
                 _ => OrderStatusKind.Active

@@ -113,6 +113,13 @@
                                 </NavLink>
                             </div>
 
+                            <div class="menu-section">
+                                <div class="menu-title">
+                                    <i class="bi bi-gear"></i>
+                                    <span>Управление</span>
+                                </div>
+                            </div>
+
                             <NavLink href="/admin/banners" class="nav-link">
                                 <i class="bi bi-image"></i>
                                 <span>Баннеры</span>
@@ -123,11 +130,6 @@
                                 <span>Доставка</span>
                             </NavLink>
 
-                            @* <NavLink href="/admin/reviews" class="nav-link">
-                                <i class="bi bi-star"></i>
-                                <span>*Отзывы</span>
-                            </NavLink> *@
-
                             <NavLink href="/admin/reports" class="nav-link">
                                 <i class="bi bi-bar-chart"></i>
                                 <span>Отчеты</span>
@@ -137,11 +139,6 @@
                                 <i class="bi bi-cash-coin"></i>
                                 <span>Акции</span>
                             </NavLink>
-
-                            @* <NavLink href="/admin/settings" class="nav-link">
-                                <i class="bi bi-gear"></i>
-                                <span>*Настройки</span>
-                            </NavLink> *@
 
                             <div class="nav-item px-3">
                                 <button type="button" class="nav-link btn btn-link text-start w-100" @onclick="() => LogoutAsync(auth.User)">

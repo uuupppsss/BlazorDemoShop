@@ -43,7 +43,7 @@
         <EditForm Model="@_model" OnValidSubmit="@HandleCreateProductAsync" FormName="create-form">
             <DataAnnotationsValidator />
             <ValidationSummary class="mb-2" />
-            
+
             <div class="mb-3">
                 <label for="product-name" class="form-label">Название</label>
                 <InputText id="product-name" class="form-control" @bind-Value="_model.Name" />
@@ -63,7 +63,7 @@
                 <label for="product-count" class="form-label">Количество в наличии</label>
                 <InputNumber id="product-count" class="form-control" @bind-Value="_model.Count" />
             </div>
-            
+
             <div class="card tag-picker-card mb-3">
                 <div class="card-body">
                     <h5 class="mb-2">Теги товара</h5>
@@ -107,9 +107,9 @@
                         </div>
                     }
                 </div>
-            </div> 
+            </div>
 
-             <div class="card tag-picker-card mb-3">
+            <div class="card tag-picker-card mb-3">
                 <div class="card-body">
                     <div class="image-editor-header">
                         <h5 class="mb-0">Картинки товара</h5>
@@ -145,7 +145,7 @@
                             @for (var i = 0; i < _imageUrls.Count; i++)
                             {
                                 var imageIndex = i;
-                                <div class="image-editor-item"> 
+                                <div class="image-editor-item">
                                     <button type="button"
                                             class="image-remove-button"
                                             title="Удалить картинку"
@@ -154,19 +154,19 @@
                                     </button>
                                     <img class="image-editor-preview"
                                          src="@GetImageUrl(_imageUrls[imageIndex])"
-                                         alt="Картинка товара"/>
+                                         alt="Картинка товара" />
                                 </div>
                             }
                         </div>
                     }
                 </div>
-            </div> 
+            </div>
 
             <button type="submit" class="btn btn-success" disabled="@(_isBusy || _isUploadingImages)">
                 @(_isBusy ? "Добавляем..." : "Добавить товар")
             </button>
         </EditForm>
-        
+
     }
 </section>
 
@@ -175,7 +175,7 @@
     private const string PlaceholderImage = "https://placehold.co/640x420/efe4d4/5f4638?text=No+Image";
 
     private ProductCreateInputModel _model = new();
-   // private EditContext _editContext = default!;
+    // private EditContext _editContext = default!;
     private readonly HashSet<int> _selectedTagIds = new();
     private readonly List<string> _imageUrls = new();
     private List<ProductTypeDTO> _tagFilters = new();
