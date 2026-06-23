@@ -297,43 +297,43 @@ namespace ApiDemoShop.Controllers
                     return BadRequest("Введите ссылку отслеживания");
                 order.TrackingLink = request.TrackingLink;
 
-                //try
-                //{
-                    //await _emailService.SendMessageAsync
-                    //(order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ");
-                //}
-                //catch (Exception ex)
-                //{
-                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                //}
+                try
+                {
+                    await _emailService.SendMessageAsync
+                    (order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
 
             }
 
             if (targetKind == OrderStatusKind.Ready)
             {
 
-                //try
-                //{
-                //    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} готов к выдаче");
-                //}
-                //catch (Exception ex)
-                //{
-                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                //}
+                try
+                {
+                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} готов к выдаче");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
 
             }
 
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
-                //try
-                //{
-                //    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
-                //}
-                //catch (Exception ex)
-                //{
-                //    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                //}
+                try
+                {
+                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
 
             }
             else if (request.RecieveDate.HasValue)

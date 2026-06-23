@@ -39,9 +39,7 @@ namespace ApiDemoShop
             });
 
             builder.Services.AddDbContext<DemoShopDbContext>(options =>
-        options
-        .EnableSensitiveDataLogging()
-        .LogTo(Console.WriteLine));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
             builder.Services.AddScoped<IAuthService, AuthService>();
