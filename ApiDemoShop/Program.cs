@@ -15,9 +15,29 @@ namespace ApiDemoShop
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            //builder.Services.AddAutoMapper(typeof(MappingProfile));
-            //builder.Services.AddDbContext<DemoShopDbContext>();
+            // Добавляем CORS для публикации!!!
+            var corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>();
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowBlazor",
+                    policy =>
+                    {
+                        if (corsOrigins != null && corsOrigins.Any())
+                        {
+                            policy.WithOrigins(corsOrigins)
+                                  .AllowAnyHeader()
+                                  .AllowAnyMethod()
+                                  .AllowCredentials();
+                        }
+                        else
+                        {
+                            policy.AllowAnyOrigin()
+                                  .AllowAnyHeader()
+                                  .AllowAnyMethod();
+                        }
+                    });
+            });
+
             builder.Services.AddDbContext<DemoShopDbContext>(options =>
         options
         .EnableSensitiveDataLogging()
