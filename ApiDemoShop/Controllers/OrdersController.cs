@@ -315,17 +315,6 @@ namespace ApiDemoShop.Controllers
                 order.RecieveDate = null;
             }
 
-            if (targetKind == OrderStatusKind.Cancelled)
-            {
-                var items = _dbContext.OrderItems.Where(i => i.OrdeId == id);
-
-                foreach(var i in items)
-                {
-                    var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == i.ProductId);
-                    product.Count += i.Count;
-                }
-            }
-
             
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -378,6 +367,23 @@ namespace ApiDemoShop.Controllers
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                     await _emailService.SendMessageAsync
                     (order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ", cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return BadRequest("Превышено время ожидания ответа от почтового сервиса.");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
+            }
+            if (targetKind == OrderStatusKind.Cancelled)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    await _emailService.SendMessageAsync
+                    (order.User.Email, $"Заказ {order.Id} отменен ", cts.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -817,7 +823,7 @@ namespace ApiDemoShop.Controllers
         {
             return statusTitle?.Trim() switch
             {
-                "Отменён" => OrderStatusKind.Cancelled,
+                "Отменен" => OrderStatusKind.Cancelled,
                 "Завершен" => OrderStatusKind.Completed,
                 "Передан в доставку" => OrderStatusKind.Transferred,
                 "Готов к выдаче" => OrderStatusKind.Ready,
