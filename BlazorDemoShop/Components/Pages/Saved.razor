@@ -1,4 +1,5 @@
 ﻿@page "/saved"
+@using BlazorDemoShop.Components.Layout
 @attribute [Authorize (Roles ="user")]
 @inject ApiFavoriteService FavoriteService
 @inject NavigationManager Navigation
@@ -37,9 +38,14 @@ else
 
                         <div class="d-flex justify-content-between align-items-center">
 
-                            <span class="fw-bold fs-5">
+                            @* <span class="fw-bold fs-5">
                                 @product.Price ₽
-                            </span>
+                            </span> *@
+                             <ProductPrice HasDiscount="@product.Promo.HasDiscount"
+                                      OldPrice="@product.Promo.OldPrice"
+                                      FinalPrice="@product.Promo.FinalPrice"
+                                      DiscountPercent="@product.Promo.DiscountPercent" 
+                                      EndDate="@product.Promo.EndDate"/>
 
                             <button class="btn btn-outline-danger"
                                     @onclick="() => Remove(product.Id)">

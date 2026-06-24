@@ -1,5 +1,6 @@
 ﻿using ApiDemoShop.Data;
 using ApiDemoShop.Model;
+using ApiDemoShop.Services;
 using LibDemoShop;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -70,12 +71,15 @@ namespace ApiDemoShop.Controllers
 
             var favorites = await _context.SavedProducts
                 .Where(x => x.UserId == userId)
+                .Include(x=>x.Product)
+                .Include(x=>x.Product.Promotions)
                 .Select(x => new ProductCardDTO
                 {
                     Id = x.Product.Id,
                     Name = x.Product.Name,
                     Price = x.Product.Price,
                     Count = x.Product.Count,
+                    Promo = PromotionHelper.FillDiscountInfo(x.Product),
                     MainImage = x.Product.ProductImages
                     .OrderBy(i => i.Id)
                         .Select(i => i.Image)

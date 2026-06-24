@@ -112,8 +112,7 @@
                             <label class="btn btn-outline-secondary btn-sm image-add-button image-upload-button">
                                 +
                                 <InputFile class="image-upload-input"
-                                           accept="image/*"
-                                           multiple
+                                           multiple accept=".jpg,.jpeg,.png"
                                            OnChange="@HandleImageFilesSelectedAsync" />
                             </label>
                         }
@@ -337,6 +336,7 @@
             _isUploadingImages = false;
         }
     }
+    
 
     private void RemoveImage(int index)
     {

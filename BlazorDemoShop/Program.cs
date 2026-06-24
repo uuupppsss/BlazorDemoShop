@@ -34,55 +34,55 @@ namespace BlazorDemoShop
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
             builder.Services.AddHttpClient<ApiProductsClientService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<ApiBannersService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<ApiReviewsService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<ApiFavoriteService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<ApiTagsService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<PromotionsService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
             builder.Services.AddHttpClient<ApiDeliveryService>((serviceProvider, client) =>
             {
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var baseUrl = configuration["ApiSettings:BaseUrl"];
-                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:7299/" : baseUrl);
+                client.BaseAddress = new Uri(string.IsNullOrWhiteSpace(baseUrl) ? "http://localhost:5285/" : baseUrl);
             });
 
 

@@ -297,43 +297,13 @@ namespace ApiDemoShop.Controllers
                     return BadRequest("Введите ссылку отслеживания");
                 order.TrackingLink = request.TrackingLink;
 
-                try
-                {
-                    await _emailService.SendMessageAsync
-                    (order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                }
-
             }
 
-            if (targetKind == OrderStatusKind.Ready)
-            {
-
-                try
-                {
-                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} готов к выдаче");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                }
-
-            }
+            
 
             if (targetKind == OrderStatusKind.Completed)
             {
                 order.RecieveDate = request.RecieveDate ?? DateTime.Now;
-                try
-                {
-                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
-                }
 
             }
             else if (request.RecieveDate.HasValue)
@@ -363,6 +333,61 @@ namespace ApiDemoShop.Controllers
 
             var response = await BuildOrdersQuery()
                 .FirstAsync(x => x.Id == order.Id, cancellationToken);
+
+            if (targetKind == OrderStatusKind.Completed)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} завершен", cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return BadRequest("Превышено время ожидания ответа от почтового сервиса.");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
+
+            }
+
+            if (targetKind == OrderStatusKind.Ready)
+            {
+
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    await _emailService.SendMessageAsync(order.User.Email, $"Заказ {order.Id} готов к выдаче", cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return BadRequest("Превышено время ожидания ответа от почтового сервиса.");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+
+            }
+
+            if (targetKind == OrderStatusKind.Transferred)
+            {
+                try
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    await _emailService.SendMessageAsync
+                    (order.User.Email, $"Заказ {order.Id} передан в доставку. Ссылка для отслеживания - {request.TrackingLink} ", cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return BadRequest("Превышено время ожидания ответа от почтового сервиса.");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Что то пошло не так в работе почтового сервиса. Данные не были сохранены");
+                }
+            }
 
             return Ok(response);
         }

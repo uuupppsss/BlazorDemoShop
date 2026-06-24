@@ -54,10 +54,11 @@ namespace ApiDemoShop.Services
             using var smtp = new SmtpClient(host, port)
             {
                 Credentials = new NetworkCredential(senderEmail, senderPassword),
-                EnableSsl = enableSsl
+                EnableSsl = enableSsl,
+                Timeout = 5000
             };
 
-            _logger.LogInformation("Отправка сообщения на {Email}", email);
+            //_logger.LogInformation("Отправка сообщения на {Email}", email);
             await smtp.SendMailAsync(message, cancellationToken);
         }
 

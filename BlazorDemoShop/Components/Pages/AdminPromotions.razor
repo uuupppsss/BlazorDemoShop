@@ -37,7 +37,7 @@
                     </NavLink>
 
                 <button class="btn btn-danger btn-sm"
-                        @onclick="() => Delete(promotion.Id)">
+                        @onclick="()=>OpenDeleteModal(promotion.Id)">
                     Удалить
                 </button>
             </td>
@@ -46,8 +46,26 @@
     </tbody>
 </table>
 
-@code {
+@if (_promToDeleteId != 0)
+{
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);">
 
+        <ConfirmDialog IsVisible="@showDeleteModal"
+                       Title="Подтверждение удаления"
+                       Message="Удалить акцию?"
+                       ConfirmText="Удалить"
+                       CancelText="Отмена"
+                       OnConfirm="Delete"
+                       OnCancel="CloseDeleteModal" />
+
+    </div>
+}
+
+@code {
+    private int _promToDeleteId = 0;
+    private bool showDeleteModal = false;
     private List<PromotionDto> _promotions = [];
 
     protected override async Task OnInitializedAsync()
@@ -65,13 +83,29 @@
         StateHasChanged();
     }
 
-    private async Task Delete(int id)
+    private void OpenDeleteModal(int id)
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        _promToDeleteId = id;
+        showDeleteModal = true;
+    }
 
-        await PromotionsService.Delete(id, accessToken);
+    private void CloseDeleteModal()
+    {
+        _promToDeleteId = 0;
+        showDeleteModal = false;
+    }
 
-        await Load();
+    private async Task Delete()
+    {
+        if (_promToDeleteId > 0)
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var accessToken = authState.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+
+            await PromotionsService.Delete(_promToDeleteId, accessToken);
+            CloseDeleteModal();
+
+            await Load();
+        }
     }
 }

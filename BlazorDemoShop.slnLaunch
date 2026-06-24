@@ -5,12 +5,12 @@
       {
         "Path": "BlazorDemoShop\\BlazorDemoShop.csproj",
         "Action": "Start",
-        "DebugTarget": "https"
+        "DebugTarget": "http"
       },
       {
         "Path": "ApiDemoShop\\ApiDemoShop.csproj",
         "Action": "Start",
-        "DebugTarget": "https"
+        "DebugTarget": "http"
       }
     ]
   }

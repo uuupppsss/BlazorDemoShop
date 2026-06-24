@@ -48,6 +48,7 @@
                 <div class="admin-order-row">
                     <span>Пользователь</span>
                     <strong>@GetUserTitle(_order)</strong>
+                    <strong>@GetUserContacts(_order)</strong>
                 </div>
 
                 <div class="admin-order-row">
@@ -396,4 +397,10 @@
             ? $"Пользователь #{order.UserId}"
             : $"{order.UserName} (#{order.UserId})";
     }
+
+    private static string GetUserContacts(OrderDTO order)
+    {
+        return $"Почта:   {order.UserEmail}, Телефон:   {order.UserPhone}";
+    }
+
 }
